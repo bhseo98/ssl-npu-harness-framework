@@ -1,0 +1,13 @@
+stages:
+  - name: load
+    stage: loader
+    config: { type: image_file }
+  - name: preprocess
+    stage: preprocess
+    config: { type: imagenet224 }
+  - name: classify
+    stage: classifier
+    config: { type: resnet18 }
+  - name: topk
+    stage: postprocess
+    config: { type: topk, k: 5 }

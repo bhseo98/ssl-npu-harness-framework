@@ -1,0 +1,47 @@
+# Framework-only — single service running the test suite. No GPU / mic / volumes needed.
+# Concrete applications (voice, vision, ...) define their own compose on their branch.
+#
+# Usage:
+#   docker compose run --rm test   # pytest
+
+services:
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: npu-harness-framework:latest
+    working_dir: /workspace
+    volumes:
+      - ./src:/workspace/src
+      - ./tests:/workspace/tests
+    environment:
+      PYTHONPATH: /workspace/src
+    command: ["pytest", "tests/", "-q"]
+
+  # ----- dev (신규) — VP-style 가상환경 접속, *harness 권장* -----
+  # Sibling of test. 같은 base + dev tools + bash 진입.
+  # 호스트에 venv 셋업 없이 셋업 끝난 환경 — 개발 / 디버깅 / backbone swap 실험.
+  # 기존 test service 영향 0.
+  #
+  # Usage:
+  #   docker compose build dev
+  #   docker compose run --rm dev                    # bash 진입
+  #   docker compose run --rm dev pytest tests/ -v   # 임의 명령
+  dev:
+    image: npu-harness-framework:dev
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace                                # 전체 마운트 — 편집 즉시 반영
+      - torchvision_cache:/root/.cache/torch         # ResNet 등 weights persistent
+    environment:
+      PYTHONPATH: /workspace/src
+      TERM: xterm-256color
+    stdin_open: true
+    tty: true
+    # command 미지정 — Dockerfile.dev 의 CMD ["bash"] 가 default.
+
+volumes:
+  torchvision_cache:
