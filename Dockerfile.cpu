@@ -1,0 +1,39 @@
+# syntax=docker/dockerfile:1.7
+# CPU-only variant — 설계 검토 §4 "CPU만 가지고 일단 NPU는 나중에" 환경 시뮬레이션.
+# GPU runtime / CUDA stack 의 ~1.4 GB overhead 제거 → embedded budget 검증 친화.
+# Phase 3 (virtual platform) 의 host-side 검증에도 그대로 재사용 가능.
+
+FROM python:3.11-slim
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1 \
+    TARGET_APP_CONFIG=/workspace/configs/embedded.yaml
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ffmpeg libsndfile1 libportaudio2 \
+        build-essential git ca-certificates curl \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+
+# torch CPU wheel (CUDA dependency 제거)
+RUN pip install --index-url https://download.pytorch.org/whl/cpu \
+        torch==2.5.1 torchaudio==2.5.1
+
+COPY pyproject.toml ./
+COPY src ./src
+COPY scripts ./scripts
+COPY configs ./configs
+COPY tests ./tests
+COPY agents ./agents
+COPY docs ./docs
+
+RUN pip install -e ".[dev]"
+
+EXPOSE 8000
+
+# default config 는 embedded.yaml (sequential_load + CPU + tiny STT)
+CMD ["python", "scripts/run_demo.py", "-c", "configs/embedded.yaml"]

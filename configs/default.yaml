@@ -1,0 +1,44 @@
+# 모델 swap은 이 파일만 수정하면 됨.
+# registry.build_pipeline(config) 가 type 필드를 보고 클래스를 instantiate.
+#
+# 본 셋 (Whisper-small / Qwen2.5-0.5B-Instruct / espnet_kss) 이 Phase 1 의 final
+# selection. 설계 §2 의 "알고리즘이나 모델을 확정한 다음에" 에 따라 lock.
+# configs/variants/ 는 비교 reference only — Phase 2 (MLIR lowering) 의 대상도
+# 본 default.yaml 모델을 따른다. 자세히는 (내부 문서) 참고.
+
+pipeline:
+  language: ko
+  sample_rate: 16000
+  budget_mb: 2048        # 정보용; profiler가 초과 시 경고
+
+stt:
+  type: faster_whisper    # registry 키 (npu_harness_framework.stt 안에서 등록)
+  model: small            # faster-whisper small (CT2 int8, GPU ~150MB)
+  language: ko
+  device: auto            # auto | cuda | cpu
+  compute_type: auto      # auto → cuda:int8_float16, cpu:int8
+
+llm:
+  type: hf_causal
+  model: Qwen/Qwen2.5-0.5B-Instruct
+  device: auto
+  max_new_tokens: 128
+  temperature: 0.7
+  system_prompt: |
+    You are a concise, friendly Korean voice assistant.
+    Keep answers short (1-2 sentences) and natural for speech output.
+    Always reply in Korean unless explicitly asked otherwise.
+
+tts:
+  type: espnet_kss
+  model: imdanboy/kss_tts_train_jets_raw_phn_null_g2pk_train.total_count.ave
+  device: auto
+
+audio:
+  record_seconds_max: 10
+  silence_trigger: false   # MVP: push-to-talk only
+  output_dir: recordings
+
+profiler:
+  enabled: true
+  log_path: logs/profile.jsonl

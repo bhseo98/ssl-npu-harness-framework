@@ -1,0 +1,70 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "npu-harness-framework"
+version = "0.1.0"
+description = "Modular voice AI evaluation framework (STT + LLM + TTS) for embedded targets"
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+authors = [{ name = "bohyun seo" }]
+license = { text = "MIT" }
+
+dependencies = [
+    # core
+    "pyyaml>=6.0",
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "psutil>=5.9",
+
+    # torch (CUDA wheels resolved by docker; CPU fallback ok)
+    "torch>=2.2",
+    "torchaudio>=2.2",
+
+    # STT
+    "openai-whisper>=20231117",
+    "faster-whisper>=1.0",
+
+    # LLM
+    "transformers>=4.44",
+    "accelerate>=0.30",
+    "sentencepiece>=0.2.0",
+
+    # TTS (KSS Korean model via ESPnet)
+    "espnet>=202402",
+    "espnet_model_zoo>=0.1.7",
+    "g2pk>=0.9.4",
+
+    # TTS — Piper (VITS) via ONNX, ~63MB Korean voice; MLIR lowering target.
+    "onnxruntime>=1.20",
+    "pygoruut>=0.7",
+
+    # Cloud TTS (Edge Neural — more natural Korean prosody, MP3 decoded via ffmpeg)
+    "edge-tts>=6.1",
+
+    # audio I/O (microphone)
+    "sounddevice>=0.4.6",
+    "soundfile>=0.12",
+
+    # browser mic/speaker demo
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.5",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

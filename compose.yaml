@@ -1,0 +1,141 @@
+# docker compose up app  → GPU + mic 사용 가능한 demo 컨테이너 실행
+# docker compose run --rm test → pytest
+#
+# 마이크 사용을 위해 /dev/snd 와 audio 그룹 추가.
+# GPU 사용을 위해 deploy.resources.reservations.devices 사용 (Compose v2 권장 문법).
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # CTranslate2(faster-whisper)가 CUDA 12.x runtime을 요구. 호스트 13.x 드라이버 호환.
+        CUDA_TAG: 12.8.0-cudnn-devel-ubuntu24.04
+    image: npu-harness-framework:latest
+    container_name: npu-harness-framework
+    stdin_open: true
+    tty: true
+    working_dir: /workspace
+    volumes:
+      - ./src:/workspace/src
+      - ./scripts:/workspace/scripts
+      - ./configs:/workspace/configs
+      - ./tests:/workspace/tests
+      - hf_cache:/root/.cache/huggingface
+      - torch_cache:/root/.cache/torch
+      - espnet_cache:/root/.cache/espnet
+    devices:
+      - /dev/snd:/dev/snd        # 마이크 / 스피커 (ALSA)
+    group_add:
+      - audio
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      PYTHONPATH: /workspace/src
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    command: ["python", "-m", "scripts.run_demo"]
+
+  web:
+    image: npu-harness-framework:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        CUDA_TAG: 12.8.0-cudnn-devel-ubuntu24.04
+    working_dir: /workspace
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src:/workspace/src
+      - ./scripts:/workspace/scripts
+      - ./configs:/workspace/configs
+      - ./recordings:/workspace/recordings
+      - hf_cache:/root/.cache/huggingface
+      - torch_cache:/root/.cache/torch
+      - espnet_cache:/root/.cache/espnet
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      PYTHONPATH: /workspace/src
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    command: ["python", "scripts/web_demo.py", "--host", "0.0.0.0", "--port", "8000"]
+
+  # pytest 전용 (no mic, no GPU 강제 안 함 — CPU에서도 unit test 돌아가야 함).
+  # app 서비스와 동일 이미지를 공유. app build가 끝났다면 추가 빌드 없이 재사용된다.
+  test:
+    image: npu-harness-framework:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        CUDA_TAG: 12.8.0-cudnn-devel-ubuntu24.04
+    working_dir: /workspace
+    volumes:
+      - ./src:/workspace/src
+      - ./tests:/workspace/tests
+      - ./configs:/workspace/configs
+      - hf_cache:/root/.cache/huggingface
+    environment:
+      PYTHONPATH: /workspace/src
+    command: ["pytest", "tests/", "-v"]
+
+  # ----- dev (신규) — VP-style 가상환경 접속, *harness 권장* -----
+  # Sibling of app/web/test. 같은 system deps + dev tools + bash 진입.
+  # 호스트에 venv 셋업 없이 셋업 끝난 환경 진입 — 개발 / 디버깅 / 반복 실험.
+  # 기존 app/web/test 영향 0.
+  #
+  # Usage:
+  #   docker compose build dev
+  #   docker compose run --rm dev                    # bash 진입
+  #   docker compose run --rm dev pytest tests/ -v   # 임의 명령
+  dev:
+    image: npu-harness-framework:dev
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      args:
+        CUDA_TAG: 12.8.0-cudnn-devel-ubuntu24.04
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace                                # 전체 마운트 — 편집 즉시 반영
+      - hf_cache:/root/.cache/huggingface
+      - torch_cache:/root/.cache/torch
+      - espnet_cache:/root/.cache/espnet
+    devices:
+      - /dev/snd:/dev/snd                            # 마이크 / 스피커 (mic 실험 시)
+    group_add:
+      - audio
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      PYTHONPATH: /workspace/src
+      HF_TOKEN: ${HF_TOKEN:-}
+      TERM: xterm-256color
+    stdin_open: true                                 # -i
+    tty: true                                        # -t
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    # command 미지정 — Dockerfile.dev 의 CMD ["bash"] 가 default.
+
+volumes:
+  hf_cache:
+  torch_cache:
+  espnet_cache:

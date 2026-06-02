@@ -1,0 +1,41 @@
+# LLM swap: Qwen2.5-0.5B → HyperCLOVAX-1.5B (Naver Korean-native SLM)
+# 한국어 의도 파악 개선 목적. fp16 ~3GB → 2GB DRAM 예산 초과(profiler 경고 발생).
+# 사용: python scripts/run_demo.py -c configs/variants/llm-hyperclovax-1.5b.yaml
+#       (또는 TARGET_APP_CONFIG=configs/variants/llm-hyperclovax-1.5b.yaml)
+
+pipeline:
+  language: ko
+  sample_rate: 16000
+  budget_mb: 2048
+
+stt:
+  type: faster_whisper
+  model: small
+  language: ko
+  device: auto
+  compute_type: auto
+
+llm:
+  type: hf_causal
+  model: naver-hyperclovax/HyperCLOVAX-SEED-Text-Instruct-1.5B
+  device: auto
+  max_new_tokens: 128
+  temperature: 0.7
+  system_prompt: |
+    너는 간결하고 친근한 한국어 음성 비서야.
+    답변은 1-2문장으로 짧고 자연스러운 구어체로 해.
+    별도 지시가 없으면 항상 한국어로 답해.
+
+tts:
+  type: espnet_kss
+  model: imdanboy/kss_tts_train_jets_raw_phn_null_g2pk_train.total_count.ave
+  device: auto
+
+audio:
+  record_seconds_max: 10
+  silence_trigger: false
+  output_dir: recordings
+
+profiler:
+  enabled: true
+  log_path: logs/profile.jsonl
