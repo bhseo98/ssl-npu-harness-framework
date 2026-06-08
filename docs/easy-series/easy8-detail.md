@@ -10,6 +10,32 @@ torch-mlir/turbine 파이프라인을 정리하다 보면 "`nn.Module`을 `torch
 
 소스를 열고 나서야 그게 거꾸로라는 걸 알았다. 이건 torch가 *못 한* 게 아니라, AMD가 *일부러 torch한테 안 보여준* 연산이다. 표준 경로로 두면 분명히 동작은 하는데, 그렇게 나온 IR이 IREE 입장에서 fusion이 안 되거나 중간 텐서를 메모리에 통째로 풀어버린다. 그래서 같은 수학을 IREE가 좋아하는 모양으로 손수 MLIR로 써서 끼워 넣은 것이다. 네 커널이 다 그렇다. 동기가 하나로 모인다 — **fusion / 중간 텐서 materialize를 피하려고.**
 
+```mermaid
+flowchart TB
+  subgraph SPLICE["A. 공통 메커니즘 — 4개 커널 모두 동일"]
+    direction LR
+    M["nn.Module.forward<br/>(traceable)"] -->|호출| BB["torch.ops.amdsharktank.X<br/>= BLACKBOX (CustomOp)"]
+    BB -->|export trace| FX["FX: opaque op<br/>aten.* 안 보임"]
+    FX -->|lowering generate| SP["util.func @X splice<br/>+ util.call"]
+  end
+
+  subgraph K["B. 네 커널 — 표준 aten(회피) → 우회 IR"]
+    direction LR
+    A0["① RoPE<br/>표준 aten.cat ✗<br/>fusion 차단벽"] -->|우회| A1["linalg.generic<br/>+ arith.select"]
+    B0["② KV gather<br/>표준 aten.index ✗<br/>paged 간접참조"] -->|우회| B1["iree_linalg_ext.gather<br/>(IREE 전용 ✗NPU)"]
+    C0["③ q8 matmul <br/>dequant→fp weight ✗<br/>materialize"] -->|우회| C1["dequant+mm generic<br/>(fused, weight int8 유지)"]
+    D0["④ flash attn<br/>O(seq²) score ✗<br/>materialize"] -->|우회| D1["iree_linalg_ext.attention<br/>(IREE 전용 ✗NPU)"]
+  end
+
+  SP --> K
+  K --> V["공통 = fusion/materialize 회피 · trade-off = ②④ IREE 전용 dialect<br/>on-device 해법: 표준 aten/linalg 로 되돌리고 fusion 은 NPU 컴파일러에 role부여 <br/>= LlamaOnDevice / WhisperForwardOnly (server_side_op_hits {})"]
+  
+  classDef bad fill:#ffcdd2,stroke:#c62828,color:#000000,font-weight:bold;
+  classDef good fill:#c8e6c9,stroke:#2e7d32,color:#000000,font-weight:bold;
+  classDef black fill:#ffe0b2,stroke:#ef6c00,color:#000000,font-weight:bold;
+  classDef verdict fill:#d1c4e9,stroke:#5e35b1,color:#000000,font-weight:bold;
+```
+
 ## Fusion
 
 아주 단순한 예 `A * B + C`를 생각해보자. fusion이 없으면(naive) 칩은 이렇게 움직인다. DRAM에서 A, B를 읽어 칩 안에서 곱하고, 그 곱셈 결과(중간텐서)를 *다시 DRAM에 내려놓는다*. 그 다음 덧셈을 하려고 방금 내려놓은 중간텐서와 C를 *또 DRAM에서 읽어* 올려서 더하고, 최종 결과를 DRAM에 쓴다. 칩과 DRAM 사이를 굳이 두 번 더 왕복하는 것이다. DRAM은 크지만 느리고, 이 왕복이 메모리 대역폭 병목을 만든다.
@@ -58,8 +84,8 @@ flowchart TB
   A2 --> A3[".so (Python 불필요)<br/>타깃: CPU / CUDA"]
   B1 --> B2["torch→linalg→IREE fusion<br/>(+ AMD @mlir_kernel 손-fusion)"]
   B2 --> B3[".vmfb / 우리 NPU<br/>타깃: IREE / NPU"]
-  classDef fuse fill:#e8f5e9,stroke:#2e7d32;
-  classDef root fill:#cfe8fc,stroke:#1565c0;
+  classDef fuse fill:#81c784,stroke:#2e7d32,color:#000000,font-weight:bold;
+  classDef root fill:#64b5f6,stroke:#1565c0,color:#000000,font-weight:bold;
   class A2,B2 fuse;
   class EP root;
 ```
