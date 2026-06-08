@@ -20,16 +20,16 @@ fusion은 이 왕복을 없앤다. A, B, C를 한 번에 읽어와서, `A*B`를 
 flowchart TB
   subgraph N["Naive — fusion 없음 : DRAM 6회 왕복"]
     direction TB
-    nAB["DRAM: A, B"] -->|① read| nMul["칩: 곱셈 A*B"]
-    nMul -->|② write 중간텐서 (낭비)| nMid["DRAM: 중간텐서 materialize"]
-    nMid -->|③ re-read (낭비)| nAdd["칩: 덧셈 +C"]
-    nC["DRAM: C"] -->|③ read| nAdd
-    nAdd -->|④ write| nRes["DRAM: 결과"]
+    nAB["DRAM: A, B"] -->|"① read"| nMul["칩: 곱셈 A*B"]
+    nMul -->|"② write 중간텐서 — 낭비"| nMid["DRAM: 중간텐서 materialize"]
+    nMid -->|"③ re-read — 낭비"| nAdd["칩: 덧셈 +C"]
+    nC["DRAM: C"] -->|"③ read"| nAdd
+    nAdd -->|"④ write"| nRes["DRAM: 결과"]
   end
   subgraph F["Fusion : DRAM 4회만"]
     direction TB
-    fABC["DRAM: A, B, C"] -->|① read 한 번| fK["칩: A*B → 레지스터 유지 → +C<br/>중간텐서 DRAM 안 감"]
-    fK -->|② write 한 번| fRes["DRAM: 결과"]
+    fABC["DRAM: A, B, C"] -->|"① read 한 번"| fK["칩: A*B → 레지스터 유지 → +C<br/>중간텐서 DRAM 안 감"]
+    fK -->|"② write 한 번"| fRes["DRAM: 결과"]
   end
   classDef waste fill:#ffcdd2,stroke:#c62828;
   classDef good fill:#c8e6c9,stroke:#2e7d32;
