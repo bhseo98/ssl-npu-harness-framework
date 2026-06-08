@@ -6,9 +6,9 @@
 
 ## Overview
 
-torch-mlir/turbine 파이프라인을 정리하다 보면 "`nn.Module`을 `torch.export`로 추적하면 전부 `torch.aten.*`으로 떨어진다"는 게 머릿속 기본 가정이 된다. 그런데 amdsharktank로 Llama를 뽑은 IR을 들여다보면 `aten`이 아닌 게 섞여 있다. `iree_linalg_ext.attention`, `iree_linalg_ext.gather`, 그리고 정체불명의 `linalg.generic` 덩어리들. 처음엔 "torch가 이건 lowering을 못 해서 fallback이 박힌 건가?" 싶었다.
+torch-mlir/turbine 파이프라인을 정리하다 보면 "`nn.Module`을 `torch.export`로 추적하면 전부 `torch.aten.*`으로 떨어진다"는 게 머릿속 기본 가정이 된다. 그런데 amdsharktank로 Llama를 뽑은 IR을 들여다보면 `aten`이 아닌 게 섞여 있다. `iree_linalg_ext.attention`, `iree_linalg_ext.gather`, 그리고 정체불명의 `linalg.generic` 덩어리들이 있다. 처음엔 "torch가 이건 lowering을 못 해서 fallback이 박힌 건가?" 싶었다.
 
-소스를 열고 나서야 그게 거꾸로라는 걸 알았다. 이건 torch가 *못 한* 게 아니라, AMD가 *일부러 torch한테 안 보여준* 연산이다. 표준 경로로 두면 분명히 동작은 하는데, 그렇게 나온 IR이 IREE 입장에서 fusion이 안 되거나 중간 텐서를 메모리에 통째로 풀어버린다. 그래서 같은 수학을 IREE가 좋아하는 모양으로 손수 MLIR로 써서 끼워 넣은 것이다. 네 커널이 다 그렇다. 동기가 하나로 모인다 — **fusion / 중간 텐서 materialize를 피하려고.**
+torch가 *못 한* 게 아니라, AMD가 *일부러 torch한테 안 보여준 (BlackBox 처리)* 연산이다. 표준 경로로 두면 분명히 동작은 하는데, 그렇게 나온 IR이 IREE 입장에서 fusion이 안 되거나 중간 텐서를 메모리에 통째로 풀어버린다. 그래서 같은 수학을 IREE가 좋아하는 모양으로 커스터마이징하여 MLIR로 써서 끼워 넣은 것이다. 네 커널이 다 그렇다. 동기가 하나로 모인다 — **fusion / 중간 텐서 materialize를 피하려고.**
 
 ```mermaid
 flowchart TB
