@@ -64,7 +64,7 @@ flowchart TB
   linkStyle 1,2 stroke:#c62828,stroke-width:2px;
 ```
 
-여기서 핵심은, 뒤에 나올 커널이 없애려는 "중간텐서"가 바로 이 그림의 빨간 박스라는 점이다. RoPE에선 그게 concat 버퍼고, q8에선 dequant된 fp weight 전체고, attention에선 O(seq²) score matrix다. AMD의 커스텀 커널은 결국 *이 중간텐서를 DRAM에 안 내리려는* 시도다. (그림 원본·A\*B+C 상세: [../diagrams/fusion-concept.drawio](../diagrams/fusion-concept.drawio) Page 1)
+여기서 핵심은, 뒤에 나올 커널이 없애려는 "중간텐서"가 바로 이 그림의 빨간 박스라는 점이다. RoPE에선 그게 concat 버퍼고, q8에선 dequant된 fp weight 전체고, attention에선 O(seq²) score matrix다. AMD의 커스텀 커널은 결국 *이 중간텐서를 DRAM에 안 내리려는* 시도다.
 
 ## fusion은 *누가* 함? — AOTInductor와 우리 경로
 
