@@ -31,8 +31,8 @@ flowchart TB
     fABC["DRAM: A, B, C"] -->|"① read 한 번"| fK["칩: A*B → 레지스터 유지 → +C<br/>중간텐서 DRAM 안 감"]
     fK -->|"② write 한 번"| fRes["DRAM: 결과"]
   end
-  classDef waste fill:#ffcdd2,stroke:#c62828;
-  classDef good fill:#c8e6c9,stroke:#2e7d32;
+  classDef waste fill:#ffcdd2,stroke:#c62828,color:#7f0000,font-weight:bold;
+  classDef good fill:#c8e6c9,stroke:#2e7d32,color:#1b5e20,font-weight:bold;
   class nMid waste;
   class fK,fRes,nRes good;
   linkStyle 1,2 stroke:#c62828,stroke-width:2px;
