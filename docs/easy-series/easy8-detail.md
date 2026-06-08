@@ -92,7 +92,7 @@ flowchart TB
 
 두 방법의 공통점, 둘 다 `torch.export`에서 갈라지고, 둘 다 핵심 최적화가 fusion이다 — 위 A\*B+C 그림의 그 fusion. 차이는 *누가* fusion하고 *어디로* codegen하느냐다. AOTInductor는 Triton/C++로 떨어지니 CPU/CUDA가 타깃이고, 임의의 NPU를 직접 노리진 못한다. 우리는 IREE(또는 ssl NPU 컴파일러)로 내리니 NPU 경로가 열리지만, 대신 IREE 전용 op(`iree_linalg_ext.*` 같은)가 IR에 박히면 비-IREE NPU엔 그게 문제가 된다 — 이게 easy8 커널 얘기로 돌아온다.
 
-그래서 결론은, ssl NPU가 IREE 비호환이면 B 경로로 가되 AMD의 IREE 전용 커스텀 커널은 표준 aten/linalg로 되돌리고, AMD가 커스텀으로 만들었던 fusion 이득은 우리 NPU 컴파일러가 다시 role을 부여하면 되는 것이다. (이 비교 그림: [../diagrams/fusion-concept.drawio](../diagrams/fusion-concept.drawio) Page 2)
+그래서 결론은, ssl NPU가 IREE 비호환이면 B 경로로 가되 AMD의 IREE 전용 커스텀 커널은 표준 aten/linalg로 되돌리고, AMD가 커스텀으로 만들었던 fusion 이득은 우리 NPU 컴파일러가 다시 role을 부여하면 되는 것이다.
 
 ## common커널에서의 우회 트릭 — AMD는 torch한테 어떻게 BlackBox 처리 하나?
 
