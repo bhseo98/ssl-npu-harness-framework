@@ -84,7 +84,7 @@ flowchart TB
   A2 --> A3[".so (Python 불필요)<br/>타깃: CPU / CUDA"]
   B1 --> B2["torch→linalg→IREE fusion<br/>(+ AMD @mlir_kernel 손-fusion)"]
   B2 --> B3[".vmfb / 우리 NPU<br/>타깃: IREE / NPU"]
-  classDef fuse fill:#81c784,stroke:#2e7d32,color:#000000,font-weight:bold;
+  classDef fuse fill:#81c784,stroke:#2e7d32,color:#F1F1EE,font-weight:bold;
   classDef root fill:#64b5f6,stroke:#1565c0,color:#000000,font-weight:bold;
   class A2,B2 fuse;
   class EP root;
