@@ -1,0 +1,47 @@
+# Framework-only — two sibling services.
+#
+# `test` (기존)  — Dockerfile 사용. 한 번 돌고 사라지는 일회성 pytest 컨테이너.
+# `dev`  (신규)  — Dockerfile.dev 사용. VP-style 가상환경 접속 (bash shell).
+#                 같은 base + dev tools (vim/jq/less/ipython) + 전체 마운트.
+#
+# Usage:
+#   docker compose run --rm test                    # pytest 한 번
+#   docker compose run --rm dev                     # bash 진입 (편집한 코드 즉시 반영)
+#   docker compose run --rm dev pytest tests/ -v    # dev 안에서 임의 명령
+#   HF_TOKEN=$HF_TOKEN docker compose run --rm dev python scripts/run_llama_export.py --config ...
+#
+# 두 service 는 별도 이미지 (`:latest` vs `:dev`) — 영향 0.
+
+services:
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: npu-harness-framework:latest
+    working_dir: /workspace
+    volumes:
+      - ./src:/workspace/src
+      - ./tests:/workspace/tests
+    environment:
+      PYTHONPATH: /workspace/src
+    command: ["pytest", "tests/", "-q"]
+
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: npu-harness-framework:dev
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace                              # 전체 마운트 — 편집 즉시 반영
+      - hf_cache:/root/.cache/huggingface          # HF 모델 캐시 persistent
+    environment:
+      PYTHONPATH: /workspace/src
+      HF_TOKEN: ${HF_TOKEN:-}
+      TERM: xterm-256color
+    stdin_open: true                               # -i (interactive)
+    tty: true                                      # -t (TTY)
+    # command 미지정 — Dockerfile.dev 의 CMD ["bash"] 가 default.
+
+volumes:
+  hf_cache:

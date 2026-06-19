@@ -1,0 +1,114 @@
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="arch-container" name="1. Container · Deployment">
+    <mxGraphModel dx="1100" dy="760" grid="1" gridSize="10" guides="1" page="1" pageWidth="1100" pageHeight="640" math="0" shadow="0">
+      <root>
+        <mxCell id="0" /><mxCell id="1" parent="0" />
+        <mxCell id="t" value="시스템 아키텍처 ① — 컨테이너 / 배포 뷰 (빌드타임=5번, 런타임 호스트=4번, 추론=VP)" style="text;html=1;align=center;fontSize=14;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="20" y="12" width="1060" height="28" as="geometry"/></mxCell>
+
+        <!-- build-time zone -->
+        <mxCell id="z5" value="빌드타임 — server5 ([build-host], canonical 개발)" style="rounded=1;html=1;fillColor=#eef2ff;strokeColor=#6c8ebf;verticalAlign=top;fontStyle=1;fontSize=12;dashed=1;" vertex="1" parent="1"><mxGeometry x="30" y="60" width="330" height="540" as="geometry"/></mxCell>
+        <mxCell id="b51" value="harness framework (Python)&#10;BaseStage·registry·pipeline·profiler&#10;target 선정·모델 swap" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;" vertex="1" parent="1"><mxGeometry x="50" y="96" width="290" height="64" as="geometry"/></mxCell>
+        <mxCell id="b52" value="② lowering 계층 (컴파일러 트랙)&#10;exporters · block_scaled_q8 CustomOp&#10;→ INT8 vmfb (IREE/NPU 미래)" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;align=left;" vertex="1" parent="1"><mxGeometry x="50" y="172" width="290" height="64" as="geometry"/></mxCell>
+        <mxCell id="b53" value="모델 변환: HF → GGUF/ggml&#10;whisper-tiny → ggml · Llama-3.2-1B → GGUF Qx&#10;(llama.cpp convert + quantize)" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;" vertex="1" parent="1"><mxGeometry x="50" y="248" width="290" height="64" as="geometry"/></mxCell>
+        <mxCell id="b54" value="riscv64 크로스컴파일 (static)&#10;whisper.cpp · llama.cpp · (TTS 엔진)&#10;-static-libstdc++ · GGML_RV_*=OFF" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;" vertex="1" parent="1"><mxGeometry x="50" y="324" width="290" height="64" as="geometry"/></mxCell>
+        <mxCell id="b55" value="산출물 (4번으로 전달되는 것만):&#10;• riscv64 static 엔진 바이너리&#10;• GGUF/ggml 가중치&#10;※ Python 프레임워크는 안 감(크로스컴파일 불가)" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;align=left;fontSize=11;" vertex="1" parent="1"><mxGeometry x="50" y="400" width="290" height="84" as="geometry"/></mxCell>
+        <mxCell id="b56" value="① 서버 디딤돌(검증용): web_demo가 5번에서 추론까지 — VP 없이 (이미 완료, UI/파이프라인 검증)" style="text;html=1;align=left;fontSize=10;fontStyle=2;" vertex="1" parent="1"><mxGeometry x="50" y="492" width="290" height="40" as="geometry"/></mxCell>
+
+        <!-- runtime host zone -->
+        <mxCell id="z4" value="런타임 호스트 — server4 ([runtime-host])" style="rounded=1;html=1;fillColor=#e8f6ee;strokeColor=#82b366;verticalAlign=top;fontStyle=1;fontSize=12;" vertex="1" parent="1"><mxGeometry x="410" y="60" width="430" height="540" as="geometry"/></mxCell>
+        <mxCell id="h41" value="web_demo (FastAPI + WebSocket)&#10;GET / · WS /ws · 16kHz PCM16&#10;토스 UI · 꾹눌러 말하기(press-and-hold)" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;" vertex="1" parent="1"><mxGeometry x="430" y="100" width="390" height="60" as="geometry"/></mxCell>
+        <mxCell id="h42" value="호스트 오케스트레이터 (harness host-side)&#10;Pipeline.run() = STT→LLM→TTS 순차&#10;profiler: per-stage latency/RSS · 2GB budget" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;" vertex="1" parent="1"><mxGeometry x="430" y="172" width="390" height="64" as="geometry"/></mxCell>
+        <mxCell id="h43" value="vp_* 어댑터 (BaseStage 구현)&#10;vp_whisper · vp_llama · vp_tts&#10;= 콘솔 호출(docker exec -i, stdin 주입) + 모델 볼륨 I/O" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;" vertex="1" parent="1"><mxGeometry x="430" y="248" width="390" height="64" as="geometry"/></mxCell>
+
+        <!-- VP guest -->
+        <mxCell id="zvp" value="VP 게스트 — ssl-soc-gen2 (RISC-V64, CPU-only, DDR3 ≤2GB)" style="rounded=1;html=1;fillColor=#fff5e6;strokeColor=#d79b00;verticalAlign=top;fontStyle=1;fontSize=11;" vertex="1" parent="1"><mxGeometry x="430" y="330" width="390" height="250" as="geometry"/></mxCell>
+        <mxCell id="vp1" value="whisper.cpp&#10;(whisper-tiny ggml ~40MB)" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="448" y="362" width="170" height="50" as="geometry"/></mxCell>
+        <mxCell id="vp2" value="llama.cpp&#10;(Llama-3.2-1B GGUF Q6_K)" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="448" y="424" width="170" height="50" as="geometry"/></mxCell>
+        <mxCell id="vp3" value="TTS 엔진 (riscv64)&#10;sherpa-onnx/piper KO" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="448" y="486" width="170" height="50" as="geometry"/></mxCell>
+        <mxCell id="vpv" value="모델 볼륨 (sdcard.img)&#10;GGUF/ggml 가중치&#10;⚠ 20MB initramfs window 우회&#10;엔진=rootfs 고정, 모델=볼륨" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#f8cecc;strokeColor=#b85450;align=left;fontSize=11;" vertex="1" parent="1"><mxGeometry x="636" y="362" width="170" height="120" as="geometry"/></mxCell>
+        <mxCell id="vpos" value="Linux 6.16 / OpenSBI · rootfs.cpio(엔진 고정)" style="text;html=1;align=left;fontSize=10;fontStyle=2;" vertex="1" parent="1"><mxGeometry x="448" y="540" width="358" height="20" as="geometry"/></mxCell>
+
+        <!-- browser -->
+        <mxCell id="br" value="브라우저 = 사용자 Mac&#10;🎙 push-to-talk · 🔊 스피커&#10;ssh -L 터널" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1"><mxGeometry x="900" y="180" width="170" height="90" as="geometry"/></mxCell>
+        <mxCell id="note" value="런타임 경로에 5번 없음.&#10;5번=빌드타임만.&#10;호스트=4번(VP와 co-located)→&#10;오케스트레이터가 VP 콘솔 로컬 구동." style="rounded=1;html=1;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;align=left;fontSize=11;" vertex="1" parent="1"><mxGeometry x="900" y="300" width="170" height="110" as="geometry"/></mxCell>
+
+        <!-- edges -->
+        <mxCell id="e_build" value="빌드 산출물 (엔진+GGUF), 1회" style="endArrow=classic;html=1;dashed=1;strokeColor=#d79b00;fontSize=10;" edge="1" parent="1" source="z5" target="z4"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_ws" value="WS (PCM16 / wav)" style="endArrow=classic;startArrow=classic;html=1;fontSize=10;" edge="1" parent="1" source="br" target="h41"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_orch" style="endArrow=classic;html=1;" edge="1" parent="1" source="h41" target="h42"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_ad" style="endArrow=classic;html=1;" edge="1" parent="1" source="h42" target="h43"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_console" value="docker exec -i 콘솔" style="endArrow=classic;startArrow=classic;html=1;strokeColor=#9673a6;fontSize=10;" edge="1" parent="1" source="h43" target="zvp"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_load" value="mmap" style="endArrow=open;html=1;dashed=1;fontSize=10;" edge="1" parent="1" source="vpv" target="vp2"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram id="arch-component" name="2. Component">
+    <mxGraphModel dx="1100" dy="760" grid="1" gridSize="10" guides="1" page="1" pageWidth="1080" pageHeight="640" math="0" shadow="0">
+      <root>
+        <mxCell id="0" /><mxCell id="1" parent="0" />
+        <mxCell id="t" value="시스템 아키텍처 ② — 컴포넌트 뷰 (좁은 인터페이스 · config-driven swap · 2개 swap 이음새)" style="text;html=1;align=center;fontSize=14;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="20" y="12" width="1040" height="28" as="geometry"/></mxCell>
+
+        <!-- core -->
+        <mxCell id="core" value="프레임워크 코어 (main, 불변 — branch 격리 불변량: git diff main &lt;app&gt; -- core = ∅)" style="rounded=1;html=1;fillColor=#eef2ff;strokeColor=#6c8ebf;verticalAlign=top;fontStyle=1;fontSize=12;" vertex="1" parent="1"><mxGeometry x="30" y="58" width="1010" height="150" as="geometry"/></mxCell>
+        <mxCell id="c1" value="BaseStage (ABC)&#10;__call__(payload)→Any&#10;좁은 인터페이스 (Ousterhout)" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="50" y="92" width="220" height="64" as="geometry"/></mxCell>
+        <mxCell id="c2" value="registry&#10;@register(stage,name) · build(stage,cfg)&#10;composition root = swap 단일 지점" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="290" y="92" width="240" height="64" as="geometry"/></mxCell>
+        <mxCell id="c3" value="Pipeline.run()&#10;STT→LLM→TTS linear chain" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="550" y="92" width="220" height="64" as="geometry"/></mxCell>
+        <mxCell id="c4" value="profiler.measure()&#10;latency · RAM/RSS · 2GB budget 경고&#10;cross-cutting (stage는 모름)" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="790" y="92" width="230" height="64" as="geometry"/></mxCell>
+        <mxCell id="cseam" value="◀ swap 이음새 A: YAML `type:` 한 줄 → build()가 dispatch. app·Pipeline·test는 구체 클래스 모름. 새 모델 = @register 한 줄." style="text;html=1;align=left;fontSize=11;fontStyle=2;" vertex="1" parent="1"><mxGeometry x="50" y="166" width="970" height="30" as="geometry"/></mxCell>
+
+        <!-- stage impls: two backends -->
+        <mxCell id="impl" value="Stage 구현 (BaseStage 구현체 — 배포 타깃별, additive)" style="rounded=1;html=1;fillColor=#f5f5f5;strokeColor=#999999;verticalAlign=top;fontStyle=1;fontSize=12;" vertex="1" parent="1"><mxGeometry x="30" y="228" width="1010" height="170" as="geometry"/></mxCell>
+        <mxCell id="s_srv" value="① 서버 네이티브 (Python+PyTorch, GPU/CPU)&#10;faster-whisper · transformers Llama · espnet/piper&#10;→ Deliverable ① (검증 완료)" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;align=left;" vertex="1" parent="1"><mxGeometry x="50" y="262" width="460" height="116" as="geometry"/></mxCell>
+        <mxCell id="s_vp" value="③ vp_* 콘솔 어댑터 (riscv64 native 호출)&#10;vp_whisper → whisper.cpp · vp_llama → llama.cpp · vp_tts&#10;콘솔(stdin 주입) + 모델 볼륨 I/O + 출력 파싱&#10;→ Deliverable ③ (구현 예정)" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;" vertex="1" parent="1"><mxGeometry x="540" y="262" width="480" height="116" as="geometry"/></mxCell>
+
+        <!-- lowering layer -->
+        <mxCell id="low" value="② lowering 계층 (PyTorch→MLIR 프레임워크) — 컴파일러 트랙" style="rounded=1;html=1;fillColor=#f3eefb;strokeColor=#9673a6;verticalAlign=top;fontStyle=1;fontSize=12;" vertex="1" parent="1"><mxGeometry x="30" y="418" width="1010" height="190" as="geometry"/></mxCell>
+        <mxCell id="l1" value="exporters (sibling, additive)&#10;torch_mlir.compile / iree.turbine.aot&#10;analysis → server_side_op_hits" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="50" y="452" width="300" height="74" as="geometry"/></mxCell>
+        <mxCell id="l2" value="block_scaled_q8 CustomOp&#10;INT8 qs + per-block scale, dequant fuse&#10;tied-weight skip(proj_out) → vmfb 103MB" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="370" y="452" width="320" height="74" as="geometry"/></mxCell>
+        <mxCell id="l3" value="vmfb → IREE-CPU / riscv64&#10;WM3: rel 0.61% / argmax 100%" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="710" y="452" width="300" height="74" as="geometry"/></mxCell>
+        <mxCell id="lseam" value="◀ swap 이음새 B: MICROKERNEL_BACKEND = &quot;standard&quot; → &quot;sslnpu&quot; (마이크로커널 본체만 교체, select/dispatch/모델클래스 불변)" style="text;html=1;align=left;fontSize=11;fontStyle=2;" vertex="1" parent="1"><mxGeometry x="50" y="536" width="970" height="24" as="geometry"/></mxCell>
+        <mxCell id="ltrack" value="두 양자화 트랙: GGUF Q-native(llama.cpp/whisper.cpp) = VP 실배포(지금) │ block_scaled_q8 INT8 vmfb = IREE→NPU(미래). 같은 모델, 다른 포맷·엔진." style="text;html=1;align=left;fontSize=11;fontStyle=2;fontColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="50" y="566" width="970" height="34" as="geometry"/></mxCell>
+
+        <mxCell id="ea" style="endArrow=open;html=1;dashed=1;" edge="1" parent="1" source="c2" target="impl"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="el" style="endArrow=classic;html=1;" edge="1" parent="1" source="l1" target="l2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="el2" style="endArrow=classic;html=1;" edge="1" parent="1" source="l2" target="l3"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram id="arch-sequence" name="3. Runtime Sequence">
+    <mxGraphModel dx="1100" dy="760" grid="1" gridSize="10" guides="1" page="1" pageWidth="1100" pageHeight="620" math="0" shadow="0">
+      <root>
+        <mxCell id="0" /><mxCell id="1" parent="0" />
+        <mxCell id="t" value="시스템 아키텍처 ③ — 런타임 시퀀스 (push-to-talk 1턴, 호스트=4번 / 추론=VP)" style="text;html=1;align=center;fontSize=14;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="20" y="12" width="1060" height="28" as="geometry"/></mxCell>
+
+        <!-- lifelines -->
+        <mxCell id="la" value="브라우저(Mac)" style="rounded=1;html=1;fillColor=#f5f5f5;strokeColor=#666;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="40" y="56" width="150" height="36" as="geometry"/></mxCell>
+        <mxCell id="lb" value="web_demo (4번)" style="rounded=1;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="250" y="56" width="160" height="36" as="geometry"/></mxCell>
+        <mxCell id="lc" value="오케스트레이터/vp_* (4번)" style="rounded=1;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="470" y="56" width="200" height="36" as="geometry"/></mxCell>
+        <mxCell id="ld" value="VP 게스트 엔진 (riscv64)" style="rounded=1;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="730" y="56" width="200" height="36" as="geometry"/></mxCell>
+        <mxCell id="le" value="모델 볼륨" style="rounded=1;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="970" y="56" width="100" height="36" as="geometry"/></mxCell>
+        <mxCell id="lla" style="endArrow=none;html=1;dashed=1;strokeColor=#999;" edge="1" parent="1" source="la" target="la"><mxGeometry relative="1" as="geometry"><mxPoint x="115" y="92"/><mxPoint x="115" y="580"/></mxGeometry></mxCell>
+        <mxCell id="llb" style="endArrow=none;html=1;dashed=1;strokeColor=#999;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="330" y="92"/><mxPoint x="330" y="580"/></mxGeometry></mxCell>
+        <mxCell id="llc" style="endArrow=none;html=1;dashed=1;strokeColor=#999;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="570" y="92"/><mxPoint x="570" y="580"/></mxGeometry></mxCell>
+        <mxCell id="lld" style="endArrow=none;html=1;dashed=1;strokeColor=#999;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="830" y="92"/><mxPoint x="830" y="580"/></mxGeometry></mxCell>
+        <mxCell id="lle" style="endArrow=none;html=1;dashed=1;strokeColor=#999;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="1020" y="92"/><mxPoint x="1020" y="580"/></mxGeometry></mxCell>
+
+        <mxCell id="m1" value="1. 꾹 누름 → PCM16 16kHz 스트림 (WS)" style="endArrow=classic;html=1;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="115" y="120"/><mxPoint x="330" y="120"/></mxGeometry></mxCell>
+        <mxCell id="m2" value="2. 떼면 stop → 오디오 버퍼 확정" style="endArrow=classic;html=1;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="330" y="156"/><mxPoint x="570" y="156"/></mxGeometry></mxCell>
+        <mxCell id="m3" value="3. STT: 오디오 → 콘솔(whisper.cpp)" style="endArrow=classic;html=1;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="570" y="196"/><mxPoint x="830" y="196"/></mxGeometry></mxCell>
+        <mxCell id="m3b" value="ggml 로드" style="endArrow=open;html=1;dashed=1;fontSize=10;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="830" y="220"/><mxPoint x="1020" y="220"/></mxGeometry></mxCell>
+        <mxCell id="m4" value="4. text(한국어)" style="endArrow=classic;html=1;dashed=1;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="830" y="250"/><mxPoint x="570" y="250"/></mxGeometry></mxCell>
+        <mxCell id="m5" value="5. LLM: prompt → llama.cpp (Llama-3.2-1B Q6_K)" style="endArrow=classic;html=1;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="570" y="288"/><mxPoint x="830" y="288"/></mxGeometry></mxCell>
+        <mxCell id="m6" value="6. reply text" style="endArrow=classic;html=1;dashed=1;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="830" y="322"/><mxPoint x="570" y="322"/></mxGeometry></mxCell>
+        <mxCell id="m7" value="7. TTS: text → riscv64 엔진" style="endArrow=classic;html=1;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="570" y="360"/><mxPoint x="830" y="360"/></mxGeometry></mxCell>
+        <mxCell id="m8" value="8. wav" style="endArrow=classic;html=1;dashed=1;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="830" y="394"/><mxPoint x="570" y="394"/></mxGeometry></mxCell>
+        <mxCell id="m9" value="9. result(text+wav) → WS" style="endArrow=classic;html=1;dashed=1;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="570" y="430"/><mxPoint x="330" y="430"/></mxGeometry></mxCell>
+        <mxCell id="m10" value="10. 채팅 버블 + 🔊 재생" style="endArrow=classic;html=1;dashed=1;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="330" y="466"/><mxPoint x="115" y="466"/></mxGeometry></mxCell>
+
+        <mxCell id="seqnote" value="제약: CPU-only · 합 ≤2GB DDR3 · 한국어 · stage 순차 load/unload(peak 관리) · profiler가 stage별 latency/RSS JSONL 기록. ※ stage는 순차라 동시 상주 최소화 → LLM stage가 budget 피크." style="rounded=1;html=1;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;align=left;fontSize=11;" vertex="1" parent="1"><mxGeometry x="40" y="500" width="1030" height="60" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

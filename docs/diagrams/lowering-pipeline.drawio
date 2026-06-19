@@ -1,0 +1,33 @@
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="lowering-pipe" name="Lowering Pipeline">
+    <mxGraphModel dx="1000" dy="700" grid="1" gridSize="10" guides="1" page="1" pageWidth="900" pageHeight="540" math="0" shadow="0">
+      <root>
+        <mxCell id="0" /><mxCell id="1" parent="0" />
+        <mxCell id="t" value="INT8 Lowering 파이프라인 — PyTorch → MLIR → block_scaled_q8 → vmfb → IREE-CPU (whisper-tiny 실측)" style="text;html=1;align=center;fontSize=13;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="20" y="14" width="860" height="30" as="geometry"/></mxCell>
+
+        <mxCell id="p1" value="PyTorch nn.Module&#10;(WhisperForwardOnly,&#10;eager attn)" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="30" y="70" width="140" height="60" as="geometry"/></mxCell>
+        <mxCell id="p2" value="quantize_linears_&#10;65 Linear → INT8&#10;(block-scaled q8_0)" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="200" y="70" width="140" height="60" as="geometry"/></mxCell>
+        <mxCell id="p3" value="torch.export / iree.turbine&#10;→ torch dialect MLIR&#10;server_side_op_hits {}" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="370" y="70" width="160" height="60" as="geometry"/></mxCell>
+        <mxCell id="p4" value="block_scaled_q8 CustomOp&#10;65 call → 4 unique 커널&#10;(shape별 dedup)&#10;dequant matmul에 fuse" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="560" y="65" width="170" height="70" as="geometry"/></mxCell>
+        <mxCell id="p5" value="iree-compile&#10;→ .vmfb" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1"><mxGeometry x="760" y="70" width="110" height="60" as="geometry"/></mxCell>
+
+        <mxCell id="e1" style="endArrow=classic;html=1;" edge="1" parent="1" source="p1" target="p2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" style="endArrow=classic;html=1;" edge="1" parent="1" source="p2" target="p3"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3" value="splice" style="endArrow=classic;html=1;fontSize=10;" edge="1" parent="1" source="p3" target="p4"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e4" style="endArrow=classic;html=1;" edge="1" parent="1" source="p4" target="p5"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <mxCell id="run1" value="IREE-CPU (llvm-cpu)&#10;WM3: rel 0.8% / argmax 100% (무손실)" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="700" y="180" width="170" height="56" as="geometry"/></mxCell>
+        <mxCell id="run2" value="riscv64 vmfb (VP0)&#10;target-triple riscv64 hard-float&#10;커널 178KB · whisper 125MB" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1"><mxGeometry x="700" y="250" width="170" height="56" as="geometry"/></mxCell>
+        <mxCell id="ev1" style="endArrow=classic;html=1;" edge="1" parent="1" source="p5" target="run1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ev2" style="endArrow=classic;html=1;dashed=1;" edge="1" parent="1" source="p5" target="run2"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <mxCell id="seam" value="swap 이음새 (단일 지점):&#10;MICROKERNEL_BACKEND = &quot;standard&quot; → &quot;sslnpu&quot;&#10;select(shape 계약)·dispatch·모델클래스 = 백엔드 무관(지금 가능)&#10;마이크로커널 본체(.mlir)만 SSLNPU IR 인계 후 교체" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;fontSize=11;" vertex="1" parent="1"><mxGeometry x="30" y="180" width="350" height="90" as="geometry"/></mxCell>
+        <mxCell id="seamarrow" value="generate emit 타깃" style="endArrow=classic;html=1;dashed=1;fontSize=10;" edge="1" parent="1" source="seam" target="p4"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <mxCell id="rust" value="Rust 네이티브 커널 (RK1/RK2): 같은 select 레이아웃, dequant fuse&#10;torch 패리티 rel 3.5e-7 · peak RSS IREE 대비 3–4.6×↓ (지연 비등)" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;align=left;fontSize=11;" vertex="1" parent="1"><mxGeometry x="30" y="300" width="350" height="60" as="geometry"/></mxCell>
+
+        <mxCell id="foot" value="footprint: FP32 vmfb 150.5MB → INT8 125.4MB(−17%) → 임베딩 INT8+re-tie 103MB → +mmap ~46MB (kernel-design/04)" style="text;html=1;align=left;fontSize=10;fontStyle=2;" vertex="1" parent="1"><mxGeometry x="30" y="380" width="840" height="24" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
