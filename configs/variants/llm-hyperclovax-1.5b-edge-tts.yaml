@@ -1,0 +1,42 @@
+# LLM=HyperCLOVAX-1.5B + TTS=Edge-TTS (Microsoft Neural, ko-KR-SunHiNeural)
+# 한국어 의도 파악 ↑, 음성 자연스러움 ↑↑.
+# Edge-TTS는 클라우드 호출 → 네트워크 필요, GPU/모델 가중치 0.
+# (HyperCLOVAX는 HF gated repo — hf_cache 볼륨에 `huggingface-cli login` 완료 필요)
+# 사용: python scripts/web_demo.py -c configs/variants/llm-hyperclovax-1.5b-edge-tts.yaml
+
+pipeline:
+  language: ko
+  sample_rate: 16000
+  budget_mb: 2048
+
+stt:
+  type: faster_whisper
+  model: small
+  language: ko
+  device: auto
+  compute_type: auto
+
+llm:
+  type: hf_causal
+  model: naver-hyperclovax/HyperCLOVAX-SEED-Text-Instruct-1.5B
+  device: auto
+  max_new_tokens: 128
+  temperature: 0.7
+  repetition_penalty: 1.15
+  system_prompt: |
+    너는 간결하고 친근한 한국어 음성 비서야.
+    답변은 1-2문장으로 짧고 자연스러운 구어체로 해.
+    별도 지시가 없으면 항상 한국어로 답해.
+
+tts:
+  type: edge_tts
+  voice: ko-KR-SunHiNeural    # 여성. 남성은 ko-KR-InJoonNeural / ko-KR-HyunsuNeural
+
+audio:
+  record_seconds_max: 10
+  silence_trigger: false
+  output_dir: recordings
+
+profiler:
+  enabled: true
+  log_path: logs/profile.jsonl

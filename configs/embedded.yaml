@@ -1,0 +1,46 @@
+# Embedded budget mode — 설계 검토 논의 §2 의 "2GB 넘지 않는 모델" 제약을
+# *동시 load peak* 가 아닌 *stage peak* 로 만족시킨다 (한 stage 모델만 메모리에).
+#
+# default.yaml 대비 차이:
+#   - sequential_load: true
+#   - device: cpu (Phase 3 의 CPU-only VP 환경 시뮬레이션)
+#   - stt: whisper tiny (small → tiny 로 안전 마진)
+# 모델 architecture / advanced 기법 자체는 변경 X (프로젝트 리드 자제 원칙 그대로).
+
+pipeline:
+  language: ko
+  sample_rate: 16000
+  budget_mb: 2048
+  sequential_load: true        # ← SequentialVoicePipeline 활성화
+
+stt:
+  type: faster_whisper
+  model: tiny                  # ~75 MB (small ~244 MB 보다 안전 마진)
+  language: ko
+  device: cpu
+  compute_type: int8           # faster-whisper 외부 lib default, 사용자 측 양자화 X
+
+llm:
+  type: hf_causal
+  model: Qwen/Qwen2.5-0.5B-Instruct
+  device: cpu
+  max_new_tokens: 128
+  temperature: 0.7
+  system_prompt: |
+    You are a concise, friendly Korean voice assistant.
+    Keep answers short (1-2 sentences) and natural for speech output.
+    Always reply in Korean unless explicitly asked otherwise.
+
+tts:
+  type: espnet_kss
+  model: imdanboy/kss_tts_train_jets_raw_phn_null_g2pk_train.total_count.ave
+  device: cpu
+
+audio:
+  record_seconds_max: 10
+  silence_trigger: false
+  output_dir: recordings
+
+profiler:
+  enabled: true
+  log_path: logs/profile_embedded.jsonl

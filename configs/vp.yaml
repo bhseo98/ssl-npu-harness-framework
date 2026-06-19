@@ -1,0 +1,34 @@
+# Hybrid pipeline: STT + LLM run on the RISC-V VP guest over the serial console
+# (vp_console.sh); TTS (MeloTTS Korean) runs in a host venv (tts_server.py) since
+# neural TTS won't fit the 2GB chip. web_demo (in ssl-npu-dev) POSTs reply text to
+# the host TTS server via host.containers.internal:8770.
+# Run web_demo with: TARGET_APP_CONFIG=configs/vp.yaml (in the ssl-npu-dev
+# container, with a persistent VP already started by vp_console.sh start).
+
+pipeline:
+  language: ko
+  sample_rate: 16000
+  budget_mb: 2048
+
+stt:
+  type: vp_whisper
+  model: /opt/models/ggml-tiny-q8_0.bin
+  language: ko
+
+llm:
+  type: vp_llama
+  model: /opt/models/qwen-q8-vp.gguf
+  max_new_tokens: 32
+
+tts:
+  type: host_melotts
+  url: http://host.containers.internal:8770/tts
+
+audio:
+  record_seconds_max: 10
+  silence_trigger: false
+  output_dir: recordings
+
+profiler:
+  enabled: true
+  log_path: logs/profile.jsonl

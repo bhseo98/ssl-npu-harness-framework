@@ -1,0 +1,13 @@
+# Dockerfile.hyperclovax-gpu 전용 빌드 컨텍스트 (기존 .dockerignore 는 건드리지 않음).
+# 화이트리스트 방식: 전부 제외 후 빌드에 필요한 것만 포함.
+# → 8.2GB .venv-piper, models/, recordings/, .git 등 대용량 항목이 컨텍스트에서 빠짐.
+*
+!pyproject.toml
+!src
+!scripts
+!configs
+!tests
+# 소스 트리 내 캐시/부산물은 다시 제외
+**/__pycache__
+**/*.pyc
+**/*.egg-info

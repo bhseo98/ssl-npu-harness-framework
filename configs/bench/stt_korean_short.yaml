@@ -1,0 +1,15 @@
+# STT 벤치마크용 한국어 짧은 발화 매니페스트.
+#
+# 각 항목의 `ref` 필드에 해당 wav의 실제 한국어 transcript를 직접 입력.
+# ref 가 빈 문자열이면 해당 샘플의 CER/WER 계산은 건너뜀 (latency/메모리는 계속 측정).
+# 3~5개가 적당 (벤치마크 시간 vs 결과 신뢰도 균형).
+
+samples:
+  - wav: recordings/in_web_001.wav
+    ref: ""
+  - wav: recordings/in_web_002.wav
+    ref: ""
+  - wav: recordings/in_web_003.wav
+    ref: ""
+  - wav: recordings/in_web_004.wav
+    ref: ""

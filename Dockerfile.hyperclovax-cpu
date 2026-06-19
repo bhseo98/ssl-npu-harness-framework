@@ -1,0 +1,67 @@
+# syntax=docker/dockerfile:1.7
+#
+# HyperCLOVA X 조합 (CPU 전용)
+#   STT = faster-whisper small   (CTranslate2 int8, CPU)
+#   LLM = HyperCLOVAX-SEED-Text-Instruct-1.5B   (gated → HF_TOKEN 필요)
+#   TTS = Edge-TTS (Microsoft Neural, 클라우드 호출, 모델 가중치 0)
+#
+# ⚙ GPU 없는 / 레거시 드라이버(Nvidia-340 = CUDA 6.5) 저사양 PC 용.
+#   GPU 가속이 필요하면(최신 드라이버 PC) Dockerfile.hyperclovax-gpu 사용.
+#
+# 빌드 & 실행 (그 PC 에서):
+#   git clone <repo> && cd npu-harness-framework
+#   docker build -f Dockerfile.hyperclovax-cpu -t npu-hcx:cpu .
+#   docker run --rm -it -p 8000:8000 -e HF_TOKEN=hf_xxxxx npu-hcx:cpu
+#   → 같은 PC 의 브라우저에서  http://localhost:8000  접속 (마이크는 브라우저가 처리)
+#
+# 필수 조건:
+#   - HF_TOKEN : HyperCLOVAX-SEED 는 HF gated repo → 반드시 -e HF_TOKEN=... 전달.
+#   - 인터넷   : Edge-TTS(MS 클라우드) + 첫 실행 시 모델 가중치 다운로드.
+#   - RAM      : 1.5B fp32 CPU 추론은 ~6GB. 저사양이면 응답이 수십 초 걸릴 수 있음.
+#
+FROM python:3.11-slim
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1 \
+    HF_HOME=/root/.cache/huggingface \
+    TARGET_APP_CONFIG=/workspace/configs/variants/llm-hyperclovax-1.5b-edge-tts.yaml
+
+# 시스템 의존성:
+#   ffmpeg      : Edge-TTS mp3 디코딩 + whisper 오디오 디코딩
+#   libsndfile1 : soundfile
+#   libportaudio2 : sounddevice import 안전망 (web_demo 는 직접 안 쓰지만 패키지 로드 대비)
+#   build-essential / git / curl / ca-certificates
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ffmpeg \
+        libsndfile1 \
+        libportaudio2 \
+        build-essential \
+        git \
+        ca-certificates \
+        curl \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+
+# CPU 전용 torch/torchaudio 먼저 — CUDA wheel(~1.4GB) 회피.
+# 호환 문제가 나면 이 두 버전만 조정하면 된다.
+RUN pip install --index-url https://download.pytorch.org/whl/cpu \
+        torch==2.5.1 torchaudio==2.5.1
+
+# 앱 + 나머지 의존성 (위에서 깐 CPU torch 재사용)
+COPY pyproject.toml ./
+COPY src ./src
+COPY scripts ./scripts
+COPY configs ./configs
+COPY tests ./tests
+RUN pip install -e ".[dev]"
+
+EXPOSE 8000
+
+# HyperCLOVA X (edge-tts) 브라우저 데모
+CMD ["python", "scripts/web_demo.py", \
+     "-c", "configs/variants/llm-hyperclovax-1.5b-edge-tts.yaml", \
+     "--host", "0.0.0.0", "--port", "8000"]

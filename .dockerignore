@@ -1,0 +1,28 @@
+.git/
+.gitignore
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+models/
+checkpoints/
+recordings/
+*.wav
+logs/
+*.log
+CLAUDE*.md
+Github-infomation.md
+.env
+.env.*
+.vscode/
+.idea/
+
+# ---- 호스트 가상환경 / 대용량 파일 (legacy builder 빌드 컨텍스트 비대화 방지) ----
+# 어떤 Dockerfile 도 COPY 하지 않으므로 기존 빌드에 영향 없음.
+.venv-piper/
+.venv-shark/
+*.pdf

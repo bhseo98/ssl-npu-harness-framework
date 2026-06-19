@@ -1,0 +1,64 @@
+# syntax=docker/dockerfile:1.7
+#
+# HyperCLOVA X 조합 (GPU)
+#   STT = faster-whisper small   (CTranslate2, CUDA int8_float16)
+#   LLM = HyperCLOVAX-SEED-Text-Instruct-1.5B   (gated → HF_TOKEN 필요)
+#   TTS = Edge-TTS (Microsoft Neural, 클라우드 호출, 모델 가중치 0)
+#
+# ⚠ 이 GPU 이미지는 CUDA 12.x 런타임을 요구한다.
+#   - Nvidia-340 같은 레거시 드라이버(CUDA 6.5)에서는 동작하지 않는다.
+#     그런 PC 에서는 반드시 Dockerfile.hyperclovax-cpu 를 사용할 것.
+#   - 필요: 최신 NVIDIA 드라이버(525+ / CUDA 12.x) + nvidia-container-toolkit.
+#
+# 빌드 & 실행:
+#   docker build -f Dockerfile.hyperclovax-gpu -t npu-hcx:gpu .
+#   docker run --rm -it --gpus all -p 8000:8000 -e HF_TOKEN=hf_xxxxx npu-hcx:gpu
+#   → 브라우저에서  http://localhost:8000
+#
+ARG CUDA_TAG=12.8.0-cudnn-devel-ubuntu24.04
+FROM nvidia/cuda:${CUDA_TAG}
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1 \
+    HF_HOME=/root/.cache/huggingface \
+    TARGET_APP_CONFIG=/workspace/configs/variants/llm-hyperclovax-1.5b-edge-tts.yaml
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3 \
+        python3-venv \
+        python3-pip \
+        python3-dev \
+        ffmpeg \
+        libsndfile1 \
+        libportaudio2 \
+        build-essential \
+        git \
+        ca-certificates \
+        curl \
+ && ln -sf /usr/bin/python3 /usr/local/bin/python \
+ && ln -sf /usr/bin/python3 /usr/local/bin/python3 \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+
+# 컨테이너 내부 venv 격리 (기존 Dockerfile 패턴 유지)
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY pyproject.toml ./
+COPY src ./src
+COPY scripts ./scripts
+COPY configs ./configs
+COPY tests ./tests
+
+# GPU torch (PyPI 기본 = CUDA 빌드). CTranslate2(faster-whisper)도 CUDA 12.x 런타임 사용.
+RUN pip install -e ".[dev]"
+
+EXPOSE 8000
+
+CMD ["python", "scripts/web_demo.py", \
+     "-c", "configs/variants/llm-hyperclovax-1.5b-edge-tts.yaml", \
+     "--host", "0.0.0.0", "--port", "8000"]

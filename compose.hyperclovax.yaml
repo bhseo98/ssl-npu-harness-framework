@@ -1,0 +1,61 @@
+# HyperCLOVA X 조합 — 브라우저 음성 데모 (web_demo.py, 포트 8000)
+#   faster-whisper small + HyperCLOVAX-SEED-1.5B + Edge-TTS
+#
+# 사전 준비 (HyperCLOVAX 는 gated → HF_TOKEN 필수):
+#   export HF_TOKEN=hf_xxxxx
+#
+# 실행:
+#   # 저사양 / 레거시 GPU(Nvidia-340 등) / GPU 없는 PC:
+#   docker compose -f compose.hyperclovax.yaml up --build cpu
+#
+#   # 최신 GPU PC (드라이버 525+ / CUDA 12.x + nvidia-container-toolkit):
+#   docker compose -f compose.hyperclovax.yaml up --build gpu
+#
+#   → 같은 PC 브라우저에서  http://localhost:8000
+#
+# 첫 실행은 모델 다운로드로 시간이 걸린다. hf_cache 볼륨에 저장되어 재실행 땐 안 받는다.
+
+services:
+  cpu:
+    build:
+      context: .
+      dockerfile: Dockerfile.hyperclovax-cpu
+    image: npu-hcx:cpu
+    container_name: npu-hcx-cpu
+    ports:
+      - "8000:8000"
+    environment:
+      HF_TOKEN: ${HF_TOKEN:?HF_TOKEN 환경변수가 필요합니다 — HyperCLOVAX 는 gated 모델}
+    volumes:
+      - hf_cache:/root/.cache/huggingface
+      - ./recordings:/workspace/recordings
+    stdin_open: true
+    tty: true
+
+  gpu:
+    build:
+      context: .
+      dockerfile: Dockerfile.hyperclovax-gpu
+    image: npu-hcx:gpu
+    container_name: npu-hcx-gpu
+    ports:
+      - "8000:8000"
+    environment:
+      HF_TOKEN: ${HF_TOKEN:?HF_TOKEN 환경변수가 필요합니다 — HyperCLOVAX 는 gated 모델}
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+    volumes:
+      - hf_cache:/root/.cache/huggingface
+      - ./recordings:/workspace/recordings
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    stdin_open: true
+    tty: true
+
+volumes:
+  hf_cache:

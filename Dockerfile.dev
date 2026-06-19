@@ -1,0 +1,73 @@
+# syntax=docker/dockerfile:1.7
+# voice-app — dev / interactive shell variant (가상환경 접속용, *harness 권장*).
+#
+# Sibling of `Dockerfile` (CI / demo 실행). 같은 CUDA base + system deps
+# (ffmpeg/portaudio/alsa) + Python venv + 추가 dev tools (vim/jq/less/ipython)
+# + CMD bash. uniform contract 아래에서 모델 / 실험을 자유롭게 swap 하는
+# harness 의 본질에 부합.
+#
+# Usage (compose):
+#   docker compose build dev
+#   docker compose run --rm dev
+#   → [voice-app:dev] /workspace $
+#
+# 기존 `Dockerfile` 영향 0 (sibling, additive).
+
+ARG CUDA_TAG=12.8.0-cudnn-devel-ubuntu24.04
+FROM nvidia/cuda:${CUDA_TAG}
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1 \
+    TARGET_APP_CONFIG=/workspace/configs/default.yaml
+
+# 같은 system deps + 추가 interactive dev tools.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-venv \
+    python3-pip \
+    python3-dev \
+    python3.12-dev \
+    build-essential \
+    ffmpeg \
+    libsndfile1 \
+    libportaudio2 \
+    portaudio19-dev \
+    alsa-utils \
+    git \
+    ca-certificates \
+    curl \
+    bash-completion \
+    jq \
+    less \
+    procps \
+    vim-tiny \
+ && ln -sf /usr/bin/python3 /usr/local/bin/python \
+ && ln -sf /usr/bin/python3 /usr/local/bin/python3 \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+
+# venv + Python deps (same as Dockerfile + ipython for REPL).
+COPY pyproject.toml ./
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY src ./src
+COPY scripts ./scripts
+COPY configs ./configs
+COPY tests ./tests
+
+RUN pip install -e ".[dev]" \
+ && pip install ipython
+
+# Bash QoL — prompt + completion.
+RUN echo 'PS1="\[\e[1;34m\][voice-app:dev]\[\e[0m\] \w \$ "' >> /root/.bashrc \
+ && echo 'source /etc/bash_completion 2>/dev/null || true' >> /root/.bashrc
+
+EXPOSE 8000
+
+# Default = interactive bash (vs Dockerfile's CMD ["python", "-m", "scripts.run_demo"]).
+CMD ["bash"]
