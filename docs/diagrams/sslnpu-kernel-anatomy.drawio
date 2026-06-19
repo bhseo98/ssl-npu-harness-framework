@@ -1,0 +1,84 @@
+<mxfile host="app.diagrams.net" version="24.0.0" type="device">
+  <diagram id="stack-ownership" name="스택·담당 경계">
+    <mxGraphModel dx="900" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="920" pageHeight="620" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" value="SSLNPU 스택 — 담당 경계 · 합치는 지점 · 내 천장" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;fontStyle=1;fillColor=#1f2933;fontColor=#ffffff;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="16" width="840" height="34" as="geometry" />
+        </mxCell>
+
+        <!-- 내 영역 container -->
+        <mxCell id="mine" value="내 영역 (스택 최상단 점선 박스)" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;strokeColor=#2e7d32;fillColor=none;verticalAlign=top;align=right;fontColor=#2e7d32;fontStyle=1;spacingRight=8;spacingTop=4;" vertex="1" parent="1">
+          <mxGeometry x="270" y="60" width="500" height="208" as="geometry" />
+        </mxCell>
+        <mxCell id="mz" value="PyTorch Model Zoo&#10;모델클래스 · CustomOp · dispatch  (구현)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f6ec;strokeColor=#2e7d32;fontSize=11;" vertex="1" parent="1"><mxGeometry x="300" y="74" width="440" height="48" as="geometry" /></mxCell>
+        <mxCell id="tm" value="Torch-MLIR  (torch dialect IR 생성)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f6ec;strokeColor=#2e7d32;fontSize=11;" vertex="1" parent="1"><mxGeometry x="300" y="134" width="440" height="40" as="geometry" /></mxCell>
+        <mxCell id="tmc" value="Torch-MLIR Compiler  (to modify)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f6ec;strokeColor=#2e7d32;fontSize=11;" vertex="1" parent="1"><mxGeometry x="300" y="186" width="440" height="48" as="geometry" /></mxCell>
+
+        <!-- IREE -->
+        <mxCell id="iree" value="IREE  Compiler / Runtime / VM  (기존 오픈소스)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontSize=11;" vertex="1" parent="1"><mxGeometry x="300" y="280" width="440" height="46" as="geometry" /></mxCell>
+        <mxCell id="hal" value="IREE HAL Driver  =  합치는 지점 (integration boundary)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8e1;strokeColor=#ff8f00;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="300" y="340" width="440" height="46" as="geometry" /></mxCell>
+
+        <!-- runtime팀 container -->
+        <mxCell id="team" value="runtime팀 (TBD)" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;strokeColor=#c62828;fillColor=none;verticalAlign=top;align=right;fontColor=#c62828;fontStyle=1;spacingRight=8;spacingTop=4;" vertex="1" parent="1">
+          <mxGeometry x="270" y="400" width="500" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="lib" value="SSLNPU Library / Runtime  (구현)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fdecea;strokeColor=#c62828;fontSize=11;" vertex="1" parent="1"><mxGeometry x="300" y="414" width="440" height="44" as="geometry" /></mxCell>
+        <mxCell id="hw" value="SSLNPU Driver / HW" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fdecea;strokeColor=#c62828;fontSize=11;" vertex="1" parent="1"><mxGeometry x="300" y="470" width="440" height="44" as="geometry" /></mxCell>
+
+        <!-- arrows -->
+        <mxCell id="e1" style="endArrow=classic;html=1;" edge="1" parent="1" source="mz" target="tm"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e2" style="endArrow=classic;html=1;" edge="1" parent="1" source="tm" target="tmc"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e3" style="endArrow=classic;html=1;" edge="1" parent="1" source="tmc" target="iree"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e4" style="endArrow=classic;html=1;" edge="1" parent="1" source="iree" target="hal"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e5" style="endArrow=classic;html=1;" edge="1" parent="1" source="hal" target="lib"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e6" style="endArrow=classic;html=1;" edge="1" parent="1" source="lib" target="hw"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- 내 천장 annotation -->
+        <mxCell id="ceil" value="내 천장 =&#10;CPU-via-IREE 컴파일·실행·수치 검증&#10;(SSLNPU 없이 기능 정확성 증명)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f1f8e9;strokeColor=#558b2f;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="276" width="230" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="ec" style="endArrow=classic;html=1;dashed=1;strokeColor=#558b2f;" edge="1" parent="1" source="ceil" target="iree"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="bottom" value="안정적 계약 = CustomOp 의 select(shape/dtype 인터페이스). 내 IR 이 IREE 로 들어가고, runtime팀의 SSLNPU HAL driver 가 IREE 밑에 꽂힌다. 그 후 마이크로커널 본체만 SSLNPU intrinsic 으로 채움." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffde7;strokeColor=#f9a825;fontSize=11;align=left;spacingLeft=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="544" width="840" height="60" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram id="customop-anatomy" name="CustomOp 4-파트 + swap">
+    <mxGraphModel dx="900" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="960" pageHeight="480" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="t2" value="CustomOp 4-파트 — class 는 지금, 마이크로커널 본체만 인계 후 swap" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;fontStyle=1;fillColor=#1f2933;fontColor=#ffffff;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="16" width="880" height="34" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sig" value="signature&#10;torch schema 등록" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontSize=11;" vertex="1" parent="1"><mxGeometry x="60" y="90" width="200" height="50" as="geometry" /></mxCell>
+        <mxCell id="sel" value="select&#10;shape·dtype 계약 (안정적 계약, 불변)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#cfe8fc;strokeColor=#1565c0;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="60" y="170" width="200" height="64" as="geometry" /></mxCell>
+        <mxCell id="eag" value="eager_execute&#10;순수 torch 레퍼런스 (지금 검증용)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f6ec;strokeColor=#2e7d32;fontSize=11;" vertex="1" parent="1"><mxGeometry x="350" y="110" width="240" height="60" as="geometry" /></mxCell>
+        <mxCell id="gen" value="generate&#10;마이크로커널 방출 (이 한 곳만 교체)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor=#f9a825;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="350" y="200" width="240" height="60" as="geometry" /></mxCell>
+
+        <mxCell id="now" value="지금 (포터블)&#10;표준 linalg .mlir&#10;→ CPU-IREE 검증 ✅" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f6ec;strokeColor=#2e7d32;fontSize=11;" vertex="1" parent="1"><mxGeometry x="680" y="150" width="240" height="60" as="geometry" /></mxCell>
+        <mxCell id="later" value="인계 후 (swap)&#10;SSLNPU intrinsic .mlir&#10;→ 실제 칩" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fdecea;strokeColor=#c62828;fontSize=11;" vertex="1" parent="1"><mxGeometry x="680" y="240" width="240" height="60" as="geometry" /></mxCell>
+
+        <mxCell id="a1" style="endArrow=classic;html=1;" edge="1" parent="1" source="sig" target="sel"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a2" style="endArrow=classic;html=1;" edge="1" parent="1" source="sel" target="eag"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a3" style="endArrow=classic;html=1;" edge="1" parent="1" source="sel" target="gen"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a4" value="지금" style="endArrow=classic;html=1;fontSize=10;strokeColor=#2e7d32;" edge="1" parent="1" source="gen" target="now"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="a5" value="swap" style="endArrow=classic;html=1;fontSize=10;strokeColor=#c62828;dashed=1;" edge="1" parent="1" source="gen" target="later"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="note2" value="Python(signature·select·generate) = 컴파일 시점 메타코드 (숫자 계산 안 함).  .mlir = 실제 계산(IREE 가 컴파일).  select(인터페이스)는 백엔드 바뀌어도 불변 → generate 한 곳만 표준 linalg → SSLNPU intrinsic 으로 교체." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffde7;strokeColor=#f9a825;fontSize=11;align=left;spacingLeft=12;" vertex="1" parent="1">
+          <mxGeometry x="60" y="330" width="860" height="60" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

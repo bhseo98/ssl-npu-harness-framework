@@ -1,0 +1,128 @@
+<mxfile host="app.diagrams.net" version="24.0.0" type="device">
+  <diagram id="fusion-concept" name="Fusion 개념 (A*B+C)">
+    <mxGraphModel dx="1000" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1420" pageHeight="640" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" value="Fusion 이란 — 연산을 칩 안에서 이어붙여 중간 결과를 DRAM 에 안 내리는 것   (예: A * B + C)" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;fontStyle=1;fillColor=#1f2933;fontColor=#ffffff;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="16" width="1340" height="34" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== LEFT: NAIVE ===================== -->
+        <mxCell id="ltitle" value="① Naive — fusion 없음 : DRAM 을 6번 오감 (read 4 + write 2)" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontStyle=1;fontColor=#c62828;" vertex="1" parent="1">
+          <mxGeometry x="40" y="64" width="640" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- DRAM band -->
+        <mxCell id="ldram" value="DRAM  (대용량 · 느림)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#eceff1;strokeColor=#607d8b;verticalAlign=top;align=left;spacingLeft=8;spacingTop=4;fontStyle=2;fontColor=#455a64;" vertex="1" parent="1">
+          <mxGeometry x="40" y="92" width="640" height="86" as="geometry" />
+        </mxCell>
+        <mxCell id="lA" value="A" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontSize=11;" vertex="1" parent="1"><mxGeometry x="58" y="122" width="44" height="40" as="geometry" /></mxCell>
+        <mxCell id="lB" value="B" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontSize=11;" vertex="1" parent="1"><mxGeometry x="108" y="122" width="44" height="40" as="geometry" /></mxCell>
+        <mxCell id="lMid" value="중간텐서&#10;(materialize)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcdd2;strokeColor=#c62828;fontSize=10;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="290" y="122" width="130" height="40" as="geometry" /></mxCell>
+        <mxCell id="lC" value="C" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontSize=11;" vertex="1" parent="1"><mxGeometry x="470" y="122" width="44" height="40" as="geometry" /></mxCell>
+        <mxCell id="lRes" value="결과" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c8e6c9;strokeColor=#2e7d32;fontSize=11;" vertex="1" parent="1"><mxGeometry x="560" y="122" width="90" height="40" as="geometry" /></mxCell>
+
+        <!-- chip band -->
+        <mxCell id="lchip" value="칩 내부 (레지스터 · 연산유닛, 빠름)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e8eaf6;strokeColor=#3f51b5;verticalAlign=top;align=left;spacingLeft=8;spacingTop=4;fontStyle=2;fontColor=#283593;" vertex="1" parent="1">
+          <mxGeometry x="40" y="372" width="640" height="96" as="geometry" />
+        </mxCell>
+        <mxCell id="lmul" value="곱셈  A * B" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor=#f9a825;fontSize=11;" vertex="1" parent="1"><mxGeometry x="90" y="404" width="150" height="48" as="geometry" /></mxCell>
+        <mxCell id="ladd" value="덧셈  + C" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor=#f9a825;fontSize=11;" vertex="1" parent="1"><mxGeometry x="430" y="404" width="150" height="48" as="geometry" /></mxCell>
+
+        <!-- arrows naive -->
+        <mxCell id="le1" value="① read A,B" style="endArrow=classic;html=1;fontSize=10;strokeColor=#37474f;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="lB" target="lmul"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="le2" value="② write 중간텐서  (낭비)" style="endArrow=classic;html=1;fontSize=10;strokeColor=#c62828;strokeWidth=2;dashed=1;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="lmul" target="lMid"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="le3" value="③ re-read 중간텐서, C  (낭비)" style="endArrow=classic;html=1;fontSize=10;strokeColor=#c62828;strokeWidth=2;dashed=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="lMid" target="ladd"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="le4" value="④ write 결과" style="endArrow=classic;html=1;fontSize=10;strokeColor=#37474f;exitX=0.5;exitY=0;entryX=0.7;entryY=1;" edge="1" parent="1" source="ladd" target="lRes"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="lnote" value="문제: 칩↔DRAM 을 굳이 두 번 더 왕복 (빨강 ②③). 메모리 대역폭 병목." style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontColor=#c62828;" vertex="1" parent="1">
+          <mxGeometry x="40" y="476" width="640" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== RIGHT: FUSION ===================== -->
+        <mxCell id="rtitle" value="② Fusion : DRAM 을 4번만 오감 (read 3 + write 1)" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontStyle=1;fontColor=#2e7d32;" vertex="1" parent="1">
+          <mxGeometry x="740" y="64" width="640" height="22" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rdram" value="DRAM  (대용량 · 느림)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#eceff1;strokeColor=#607d8b;verticalAlign=top;align=left;spacingLeft=8;spacingTop=4;fontStyle=2;fontColor=#455a64;" vertex="1" parent="1">
+          <mxGeometry x="740" y="92" width="640" height="86" as="geometry" />
+        </mxCell>
+        <mxCell id="rA" value="A" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontSize=11;" vertex="1" parent="1"><mxGeometry x="758" y="122" width="44" height="40" as="geometry" /></mxCell>
+        <mxCell id="rB" value="B" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontSize=11;" vertex="1" parent="1"><mxGeometry x="808" y="122" width="44" height="40" as="geometry" /></mxCell>
+        <mxCell id="rC" value="C" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontSize=11;" vertex="1" parent="1"><mxGeometry x="858" y="122" width="44" height="40" as="geometry" /></mxCell>
+        <mxCell id="rRes" value="결과" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c8e6c9;strokeColor=#2e7d32;fontSize=11;" vertex="1" parent="1"><mxGeometry x="1270" y="122" width="90" height="40" as="geometry" /></mxCell>
+
+        <mxCell id="rchip" value="칩 내부 (레지스터 · 연산유닛, 빠름)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e8eaf6;strokeColor=#3f51b5;verticalAlign=top;align=left;spacingLeft=8;spacingTop=4;fontStyle=2;fontColor=#283593;" vertex="1" parent="1">
+          <mxGeometry x="740" y="372" width="640" height="96" as="geometry" />
+        </mxCell>
+        <mxCell id="rfused" value="한 커널:  A * B  →  결과를 레지스터에 둔 채 바로  + C&#10;중간텐서를 DRAM 에 안 내림 (칩 안에만 존재)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c8e6c9;strokeColor=#2e7d32;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="900" y="398" width="320" height="60" as="geometry" /></mxCell>
+
+        <mxCell id="re1" value="① read A,B,C  (한 번)" style="endArrow=classic;html=1;fontSize=10;strokeColor=#2e7d32;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.3;entryY=0;" edge="1" parent="1" source="rB" target="rfused"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="re2" value="② write 결과  (한 번)" style="endArrow=classic;html=1;fontSize=10;strokeColor=#2e7d32;strokeWidth=2;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="rfused" target="rRes"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="rnote" value="효과: 중간텐서 write+re-read 왕복이 통째로 사라짐 → 대역폭 병목↓, 추론 속도 몇 배↑, 전력↓." style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontColor=#2e7d32;" vertex="1" parent="1">
+          <mxGeometry x="740" y="476" width="640" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- divider -->
+        <mxCell id="div" value="" style="endArrow=none;html=1;strokeColor=#b0bec5;dashed=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="710" y="92" as="sourcePoint" /><mxPoint x="710" y="468" as="targetPoint" /></mxGeometry></mxCell>
+
+        <!-- ===================== bottom: 연결 ===================== -->
+        <mxCell id="bottom" value="easy8 과 연결 — 여기서 없앤 그 '중간텐서' 가 곧:  ① RoPE 의 concat 버퍼   ② q8 의 dequant 된 fp weight   ③ attention 의 O(seq²) score matrix.&#10;AMD 가 손 커널(@mlir_kernel)로 한 일 = 이 셋을 DRAM 에 안 내리고 칩 안에서 이어붙인 것(fusion). 우리 on-device 는 표준 op 로 되돌리되 이 fusion 은 NPU 컴파일러가 책임지게 한다." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffde7;strokeColor=#f9a825;fontSize=11;align=left;spacingLeft=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="520" width="1340" height="84" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram id="aot-backends" name="fusion은 누가 하나 (AOTInductor vs IREE)">
+    <mxGraphModel dx="1000" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1420" pageHeight="700" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="t" value="같은 torch.export, 두 갈래의 AOT 컴파일 — 핵심 최적화는 둘 다 fusion (Page 1 의 '중간텐서 안 내리기')" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;fontStyle=1;fillColor=#1f2933;fontColor=#ffffff;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="16" width="1340" height="34" as="geometry" />
+        </mxCell>
+
+        <!-- common root -->
+        <mxCell id="m" value="nn.Module" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontSize=11;" vertex="1" parent="1"><mxGeometry x="610" y="70" width="200" height="38" as="geometry" /></mxCell>
+        <mxCell id="ex" value="torch.export" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontSize=11;" vertex="1" parent="1"><mxGeometry x="610" y="124" width="200" height="38" as="geometry" /></mxCell>
+        <mxCell id="ep" value="ExportedProgram  (FX: aten 그래프)&#10;— 두 경로의 공통 출발점" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#cfe8fc;strokeColor=#1565c0;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="560" y="178" width="300" height="50" as="geometry" /></mxCell>
+        <mxCell id="em" style="endArrow=classic;html=1;" edge="1" parent="1" source="m" target="ex"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="ee" style="endArrow=classic;html=1;" edge="1" parent="1" source="ex" target="ep"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- LEFT: AOTInductor -->
+        <mxCell id="ah" value="A. AOTInductor  (PyTorch 네이티브 AOT)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#ef6c00;fontSize=12;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="80" y="300" width="560" height="36" as="geometry" /></mxCell>
+        <mxCell id="a1" value="torch._inductor.aoti_compile_and_package(ep)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#ef6c00;fontSize=11;" vertex="1" parent="1"><mxGeometry x="110" y="350" width="500" height="38" as="geometry" /></mxCell>
+        <mxCell id="a2" value="TorchInductor 가 fusion (pointwise/reduction)&#10;→ Triton(GPU) / C++(CPU) 커널 생성" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#2e7d32;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="110" y="400" width="500" height="54" as="geometry" /></mxCell>
+        <mxCell id="a3" value=".so  (standalone, Python 런타임 불필요)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0277bd;fontSize=11;" vertex="1" parent="1"><mxGeometry x="110" y="466" width="500" height="38" as="geometry" /></mxCell>
+        <mxCell id="a4" value="타깃: CPU / CUDA" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eceff1;strokeColor=#607d8b;fontSize=11;" vertex="1" parent="1"><mxGeometry x="110" y="516" width="240" height="36" as="geometry" /></mxCell>
+        <mxCell id="a5" value="우리 NPU 직접 타깃 아님 (Triton/C++ codegen)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8e1;strokeColor=#ff8f00;fontSize=10;" vertex="1" parent="1"><mxGeometry x="362" y="516" width="248" height="36" as="geometry" /></mxCell>
+        <mxCell id="ea1" style="endArrow=classic;html=1;" edge="1" parent="1" source="ep" target="a1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="ea2" style="endArrow=classic;html=1;" edge="1" parent="1" source="a1" target="a2"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="ea3" style="endArrow=classic;html=1;" edge="1" parent="1" source="a2" target="a3"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- RIGHT: turbine/IREE -->
+        <mxCell id="bh" value="B. iree-turbine / torch-mlir  (우리 경로)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e8eaf6;strokeColor=#3f51b5;fontSize=12;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="780" y="300" width="560" height="36" as="geometry" /></mxCell>
+        <mxCell id="b1" value="iree.turbine  aot.export(model)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#3f51b5;fontSize=11;" vertex="1" parent="1"><mxGeometry x="810" y="350" width="500" height="38" as="geometry" /></mxCell>
+        <mxCell id="b2" value="torch dialect → linalg → IREE&#10;IREE 가 fusion + codegen  (+ AMD @mlir_kernel 손-fusion)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#2e7d32;fontSize=11;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="810" y="400" width="500" height="54" as="geometry" /></mxCell>
+        <mxCell id="b3" value=".vmfb  (또는 우리 NPU 컴파일러로 lowering)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0277bd;fontSize=11;" vertex="1" parent="1"><mxGeometry x="810" y="466" width="500" height="38" as="geometry" /></mxCell>
+        <mxCell id="b4" value="타깃: IREE 런타임 / 우리 NPU" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eceff1;strokeColor=#607d8b;fontSize=11;" vertex="1" parent="1"><mxGeometry x="810" y="516" width="240" height="36" as="geometry" /></mxCell>
+        <mxCell id="b5" value="단 iree_linalg_ext 등 IREE 전용 op 은 비-IREE NPU 엔 빚 (easy8)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8e1;strokeColor=#ff8f00;fontSize=10;" vertex="1" parent="1"><mxGeometry x="1062" y="516" width="248" height="36" as="geometry" /></mxCell>
+        <mxCell id="eb1" style="endArrow=classic;html=1;" edge="1" parent="1" source="ep" target="b1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="eb2" style="endArrow=classic;html=1;" edge="1" parent="1" source="b1" target="b2"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="eb3" style="endArrow=classic;html=1;" edge="1" parent="1" source="b2" target="b3"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- verdict -->
+        <mxCell id="v" value="공통: 둘 다 torch.export 에서 출발하고, 둘 다 핵심 최적화가 fusion (= Page 1 의 중간텐서 안 내리기).   차이: 누가 fusion 하고 어디로 codegen 하나.&#10;우리 NPU 가 IREE 비호환이면 → B 경로로 가되, AMD 의 IREE 전용 손-커널은 표준 aten/linalg 로 되돌리고 fusion 은 NPU 컴파일러가 책임 (= LlamaOnDevice / WhisperForwardOnly)." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffde7;strokeColor=#f9a825;fontSize=11;align=left;spacingLeft=12;" vertex="1" parent="1">
+          <mxGeometry x="80" y="572" width="1260" height="74" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

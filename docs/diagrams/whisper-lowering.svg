@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1060" viewBox="0 0 1200 1060" font-family="'Segoe UI',Helvetica,Arial,sans-serif">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#555"/>
+    </marker>
+    <marker id="arrowR" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#c62828"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#2e7d32"/>
+    </marker>
+  </defs>
+  <style>
+    .h  { font-size: 15px; font-weight: 700; }
+    .t  { font-size: 13px; }
+    .s  { font-size: 12px; fill: #555; }
+    .c  { font-size: 12px; font-family: 'JetBrains Mono','Consolas',monospace; }
+    .ch { font-size: 13px; font-weight:700; font-family: 'JetBrains Mono','Consolas',monospace; }
+    .badge { font-size: 13px; font-weight: 700; }
+    .ok { fill: #2e7d32; }
+    .no { fill: #c62828; }
+  </style>
+
+  <!-- title -->
+  <text x="600" y="34" text-anchor="middle" font-size="22" font-weight="700">Whisper-tiny — lowering 성공 경로 (encoder-decoder)</text>
+  <text x="600" y="58" text-anchor="middle" class="s">PDF Step 6 확장 타깃. 실측: logs/whisper/whisper-tiny.mlir (3,762 lines) · scripts/run_whisper_export.py</text>
+
+  <!-- source box -->
+  <rect x="430" y="76" width="340" height="44" rx="8" fill="#ede7f6" stroke="#5e35b1" stroke-width="1.5"/>
+  <text x="600" y="103" text-anchor="middle" class="h" fill="#4527a0">PDF Step 6 타깃: Whisper-tiny-INT8</text>
+
+  <!-- branch arrows -->
+  <path d="M520,120 L300,168" stroke="#c62828" stroke-width="1.8" fill="none" marker-end="url(#arrowR)"/>
+  <path d="M680,120 L895,168" stroke="#2e7d32" stroke-width="1.8" fill="none" marker-end="url(#arrowG)"/>
+  <text x="360" y="150" class="badge no">✗ CTranslate2 경로</text>
+  <text x="820" y="150" class="badge ok">✓ PyTorch 경로</text>
+
+  <!-- ===================== LEFT: BLOCKED ===================== -->
+  <rect x="50" y="172" width="500" height="158" rx="10" fill="#fdecea" stroke="#c62828" stroke-width="1.5"/>
+  <text x="70" y="198" class="h no">rhasspy/faster-whisper-tiny-int8  (입구컷)</text>
+  <text x="70" y="224" class="c">model.bin 첫 바이트: \x06..\x0c WhisperSpec .. decoder/activation</text>
+  <text x="70" y="244" class="c">= CTranslate2 자체 바이너리 (42 MB, int8)</text>
+  <text x="70" y="266" class="t">is_zip(PK)=False · safetensors 아님 · <tspan font-weight="700">PyTorch nn.Module 없음</tspan></text>
+  <rect x="70" y="280" width="460" height="36" rx="6" fill="#fff" stroke="#c62828" stroke-dasharray="4 3"/>
+  <text x="82" y="303" class="ch no">torch.export ✗  — 추적할 FX 그래프가 없음</text>
+  <text x="50" y="350" class="s">→ torch-MLIR 입구에서 끝. "int8 파일이 있다" ≠ "lowering 가능". (양자화 = 마지막 단계)</text>
+
+  <!-- ===================== RIGHT: SUCCESS PATH ===================== -->
+  <!-- step 1 -->
+  <rect x="660" y="172" width="490" height="46" rx="10" fill="#e7f6ec" stroke="#2e7d32" stroke-width="1.5"/>
+  <text x="680" y="200" class="h ok">openai/whisper-tiny  (PyTorch HF, FP32, 37.8M params)</text>
+  <path d="M905,218 L905,244" stroke="#2e7d32" stroke-width="1.8" marker-end="url(#arrowG)"/>
+
+  <!-- step 2: wrapper -->
+  <rect x="660" y="246" width="490" height="170" rx="10" fill="#e8f0fe" stroke="#1a56db" stroke-width="1.5"/>
+  <text x="680" y="272" class="h" fill="#1a56db">WhisperForwardOnly  (forward-only wrapper, ~10 LoC)</text>
+  <text x="680" y="296" class="c"><tspan font-weight="700">①</tspan> attn_implementation="eager"<tspan class="s">   → opaque SDPA 분해</tspan></text>
+  <text x="680" y="320" class="c"><tspan font-weight="700">②</tspan> use_cache=False<tspan class="s">              → KV cache state arg 제거</tspan></text>
+  <text x="680" y="344" class="c"><tspan font-weight="700">③</tspan> return_dict=False<tspan class="s">            → tuple (graph 친화)</tspan></text>
+  <text x="680" y="368" class="c"><tspan font-weight="700">④</tspan> example_args 고정<tspan class="s">            → dynamic dim 0</tspan></text>
+  <text x="680" y="398" class="s">= LlamaOnDevice / CausalLMWrapper 의 encoder-decoder 판 (4-가드)</text>
+  <path d="M905,416 L905,442" stroke="#2e7d32" stroke-width="1.8" marker-end="url(#arrowG)"/>
+  <text x="898" y="434" text-anchor="end" font-size="11" font-family="'JetBrains Mono','Consolas',monospace" fill="#2e7d32">forward(input_features[1,80,3000], decoder_input_ids[1,8])</text>
+
+  <!-- step 3: export -->
+  <rect x="660" y="444" width="490" height="44" rx="10" fill="#f5f5f5" stroke="#666" stroke-width="1.3"/>
+  <text x="680" y="471" class="h">iree.turbine.aot  →  export_via_iree_turbine</text>
+  <path d="M905,488 L905,514" stroke="#2e7d32" stroke-width="1.8" marker-end="url(#arrowG)"/>
+
+  <!-- ===================== RESULT (full width) ===================== -->
+  <rect x="50" y="516" width="1100" height="232" rx="12" fill="#ffffff" stroke="#2e7d32" stroke-width="2"/>
+  <text x="70" y="544" class="h ok">whisper-tiny.mlir — 3,762 lines · top-level torch dialect · 전부 표준 torch.aten.*</text>
+
+  <!-- op breakdown left -->
+  <text x="70" y="576" class="c">Conv1d ×2  →  torch.aten.convolution            <tspan class="ok" font-weight="700">✅ 표준 (신규 surface)</tspan></text>
+  <text x="70" y="600" class="c">attention ×12  →  bmm 24 + _softmax 12          <tspan class="ok" font-weight="700">✅ eager 분해</tspan></text>
+  <text x="92" y="620" class="s">(encoder self 4 + decoder self 4 + cross-attn 4)</text>
+  <text x="70" y="646" class="c">LayerNorm ×22  →  var_mean / rsqrt              <tspan class="ok" font-weight="700">✅ 표준</tspan></text>
+  <text x="70" y="670" class="c">GELU ×10 · embedding (learned pos)              <tspan class="ok" font-weight="700">✅ RoPE 커스텀 없음</tspan></text>
+
+  <!-- metrics bar -->
+  <rect x="70" y="686" width="640" height="44" rx="8" fill="#e7f6ec" stroke="#2e7d32"/>
+  <text x="86" y="704" class="c" font-weight="700">server_side_op_hits = {}   ·   dynamic = 0   ·   util.call = 0</text>
+  <text x="86" y="722" class="c" font-weight="700">iree_linalg_ext = 0   ·   hal.device.promise = 0   ·   torch.operator = 0</text>
+
+  <!-- eager vs sdpa inset -->
+  <rect x="730" y="560" width="400" height="170" rx="10" fill="#fff8e1" stroke="#f9a825" stroke-width="1.5"/>
+  <text x="750" y="585" class="h" fill="#b8860b">문제 kernel 실증 — attn 구현 대조</text>
+  <line x1="750" y1="598" x2="1110" y2="598" stroke="#f9a825"/>
+  <text x="750" y="622" class="c"><tspan font-weight="700">eager </tspan>: bmm 24 · _softmax 12 · opaque <tspan class="ok" font-weight="700">0</tspan>   ✅</text>
+  <text x="750" y="650" class="c"><tspan font-weight="700">sdpa  </tspan>: bmm  0 · _softmax  0 · opaque <tspan class="no" font-weight="700">12</tspan>  ✗</text>
+  <text x="750" y="678" class="s">default(sdpa)면 12 attention 블록이 전부</text>
+  <text x="750" y="696" class="c no">aten._scaled_dot_product_flash_attention_for_cpu</text>
+  <text x="750" y="714" class="s">블랙박스로 붕괴 → Llama 와 동일한 유일 trap.</text>
+
+  <!-- success badge -->
+  <path d="M600,748 L600,778" stroke="#2e7d32" stroke-width="2" marker-end="url(#arrowG)"/>
+  <rect x="360" y="782" width="480" height="52" rx="26" fill="#2e7d32"/>
+  <text x="600" y="814" text-anchor="middle" font-size="17" font-weight="700" fill="#fff">✅ 성공 — NPU 친화 표준 aten (wrapper 만으로 통과)</text>
+
+  <!-- footnotes / comparison -->
+  <rect x="50" y="858" width="1100" height="170" rx="10" fill="#fafafa" stroke="#bbb"/>
+  <text x="70" y="884" class="h">왜 성공했나 — Llama-3.2-1B(amdsharktank server) 대비</text>
+  <text x="70" y="912" class="t">· Whisper 신규 surface(Conv1d · cross-attention)는 <tspan font-weight="700">표준 aten 으로 그대로 lowering</tspan> — 안 막힘.</text>
+  <text x="70" y="936" class="t">· 위치 인코딩이 <tspan font-weight="700">learned embedding</tspan> 이라 Llama 를 괴롭힌 <tspan font-weight="700">RoPE custom kernel 문제가 아예 없음</tspan>.</text>
+  <text x="70" y="960" class="t">· KV cache 는 use_cache=False 로 제거 → server-side state arg / paged gather 가 IR 에 안 생김.</text>
+  <text x="70" y="984" class="t">· Whisper 는 순수 PyTorch nn.Module 이라 Llama 처럼 PagedLlmModelV1 <tspan font-weight="700">재작성 불필요</tspan> — wrapper 4-가드만으로 입고.</text>
+  <text x="70" y="1010" class="s">막힐 kernel = opaque SDPA 1개(eager 로 해결).  결과 server_side_op_hits={} 는 LlamaOnDevice 와 동일.  ※ INT8 양자화는 lowering 이후 마지막 단계.</text>
+</svg>

@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" type="device" version="24.0.0">
+  <diagram id="llama-step5" name="Llama Step 5 — Stack &amp; Flow">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1"
+                  connect="1" arrows="1" fold="1" page="1" pageScale="1"
+                  pageWidth="1100" pageHeight="1400" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- ===== Title ===== -->
+        <mxCell id="title"
+                value="Llama-3.2-1B Step 5 Complete (2026-05-27) — torch-mlir-zoo branch, commit 0d62acc"
+                style="text;html=1;align=center;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#1e3a8a;"
+                vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="1020" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== Purple dashed boundary (
+        <mxCell id="purpleBox"
+                value="━━ 
+                style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e8ff;strokeColor=#8b5cf6;strokeWidth=3;dashed=1;dashPattern=8 4;verticalAlign=top;fontStyle=1;fontSize=13;fontColor=#5b21b6;align=center;spacingTop=10;"
+                vertex="1" parent="1">
+          <mxGeometry x="40" y="70" width="640" height="640" as="geometry"/>
+        </mxCell>
+
+        <!-- 1. PyTorch LlamaOnDevice -->
+        <mxCell id="n1"
+                value="① PyTorch Model Zoo&#xa;&#xa;LlamaOnDevice (171 LoC)&#xa;RMSNorm · GQA · SwiGLU · RoPE&#xa;16-layer FP32"
+                style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#2563eb;strokeWidth=2;fontSize=12;align=center;"
+                vertex="1" parent="1">
+          <mxGeometry x="80" y="120" width="260" height="100" as="geometry"/>
+        </mxCell>
+
+        <!-- 2. HF weights -->
+        <mxCell id="n2"
+                value="HF gated weights&#xa;&#xa;meta-llama/Llama-3.2-1B-Instruct&#xa;~2.5 GB safetensors&#xa;(load_hf_weights, line 136-171)"
+                style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fef3c7;strokeColor=#d97706;strokeWidth=2;fontSize=11;align=center;"
+                vertex="1" parent="1">
+          <mxGeometry x="380" y="120" width="260" height="100" as="geometry"/>
+        </mxCell>
+
+        <!-- 3. iree.turbine.aot.export -->
+        <mxCell id="n3"
+                value="② Torch-MLIR / iree.turbine.aot.export&#xa;&#xa;FxProgramsBuilder + @export_program + aot.export&#xa;(AMD-SHARK-AI export pipeline 만 사용 — transformer 차용 X)"
+                style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dcfce7;strokeColor=#15803d;strokeWidth=2;fontSize=12;align=center;"
+                vertex="1" parent="1">
+          <mxGeometry x="80" y="260" width="560" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- 4. MLIR result -->
+        <mxCell id="n4"
+                value="③ Top-level Torch dialect MLIR&#xa;&#xa;artifacts/llama-3.2-1b-on-device-iree-turbine.mlir&#xa;&#xa;✅ 12 GB · 6 218 lines · server_side_op_hits = ∅ · has_dynamic_dim = false"
+                style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ede9fe;strokeColor=#7c3aed;strokeWidth=2;fontSize=12;fontStyle=1;align=center;"
+                vertex="1" parent="1">
+          <mxGeometry x="80" y="380" width="560" height="100" as="geometry"/>
+        </mxCell>
+
+        <!-- 5. iree-compile -->
+        <mxCell id="n5"
+                value="④ Torch-MLIR Compiler&#xa;&#xa;iree-compile --iree-hal-target-backends=llvm-cpu&#xa;36.86 s wall · peak RSS 18 GB"
+                style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fee2e2;strokeColor=#dc2626;strokeWidth=2;fontSize=12;align=center;"
+                vertex="1" parent="1">
+          <mxGeometry x="80" y="520" width="560" height="90" as="geometry"/>
+        </mxCell>
+
+        <!-- 6. .vmfb -->
+        <mxCell id="n6"
+                value="⑤ .vmfb (IREE bytecode)&#xa;&#xa;✅ 6.0 GB · Zip v4.5 · exit 0&#xa;설계 §3 &quot;유의미한 결과&quot; 기준 충족"
+                style="rounded=1;whiteSpace=wrap;html=1;fillColor=#bbf7d0;strokeColor=#16a34a;strokeWidth=3;fontSize=13;fontStyle=1;align=center;"
+                vertex="1" parent="1">
+          <mxGeometry x="80" y="650" width="560" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== target NPU stack (다음 turn) ===== -->
+        <mxCell id="sslBox"
+                value="target NPU Stack (외부 (compiler stack) 측 책임 — 본 turn 의 .vmfb 가 진입점)"
+                style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f1f5f9;strokeColor=#94a3b8;strokeWidth=1;verticalAlign=top;fontStyle=1;fontSize=12;fontColor=#475569;align=center;spacingTop=10;"
+                vertex="1" parent="1">
+          <mxGeometry x="720" y="120" width="340" height="590" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="s1" value="IREE Compiler (compiler/api.h)"
+                style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fef9c3;strokeColor=#ca8a04;fontSize=11;"
+                vertex="1" parent="1">
+          <mxGeometry x="760" y="160" width="260" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="s2" value="IREE Runtime (runtime/api.h)"
+                style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fef9c3;strokeColor=#ca8a04;fontSize=11;"
+                vertex="1" parent="1">
+          <mxGeometry x="760" y="210" width="260" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="s3" value="IREE HAL Driver"
+                style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fef9c3;strokeColor=#1d4ed8;fontSize=11;"
+                vertex="1" parent="1">
+          <mxGeometry x="760" y="260" width="125" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="s4" value="IREE VM"
+                style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fef9c3;strokeColor=#ca8a04;fontSize=11;"
+                vertex="1" parent="1">
+          <mxGeometry x="895" y="260" width="125" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="s5" value="target NPU Library"
+                style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fee2e2;strokeColor=#b91c1c;fontSize=11;fontStyle=1;"
+                vertex="1" parent="1">
+          <mxGeometry x="760" y="320" width="260" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="s6" value="target NPU Runtime"
+                style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fee2e2;strokeColor=#b91c1c;fontSize=11;fontStyle=1;"
+                vertex="1" parent="1">
+          <mxGeometry x="760" y="370" width="260" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="s7" value="Standard C Library / Linux Syscall"
+                style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dcfce7;strokeColor=#16a34a;fontSize=11;"
+                vertex="1" parent="1">
+          <mxGeometry x="760" y="430" width="260" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="s8" value="target NPU Driver"
+                style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fee2e2;strokeColor=#b91c1c;fontSize=11;fontStyle=1;"
+                vertex="1" parent="1">
+          <mxGeometry x="760" y="490" width="260" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="s9" value="target NPU HW"
+                style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dcfce7;strokeColor=#16a34a;fontSize=11;fontStyle=1;"
+                vertex="1" parent="1">
+          <mxGeometry x="760" y="550" width="260" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- Legend -->
+        <mxCell id="legendBox" value="범례"
+                style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#94a3b8;verticalAlign=top;fontStyle=1;fontSize=11;align=center;spacingTop=5;"
+                vertex="1" parent="1">
+          <mxGeometry x="40" y="730" width="1020" height="180" as="geometry"/>
+        </mxCell>
+        <mxCell id="lg1"
+                value="🟦 To Implement (사용자 책임) ─ 
+                style="text;html=1;align=left;verticalAlign=middle;fontSize=11;"
+                vertex="1" parent="1">
+          <mxGeometry x="60" y="760" width="480" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="lg2"
+                value="🟪 본 turn 산출물 (.mlir, .vmfb) ─ Step 5 완료"
+                style="text;html=1;align=left;verticalAlign=middle;fontSize=11;"
+                vertex="1" parent="1">
+          <mxGeometry x="60" y="785" width="480" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="lg3"
+                value="🟨 To Modify (프로젝트 리드 / IREE 측 ─ 본 turn 사용 X)"
+                style="text;html=1;align=left;verticalAlign=middle;fontSize=11;"
+                vertex="1" parent="1">
+          <mxGeometry x="60" y="810" width="480" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="lg4"
+                value="🟥 To Implement (외부 (compiler stack) 측 ─ target NPU Lib/RT/Driver)"
+                style="text;html=1;align=left;verticalAlign=middle;fontSize=11;"
+                vertex="1" parent="1">
+          <mxGeometry x="60" y="835" width="480" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="lg5"
+                value="🟩 OS / HW (기존)"
+                style="text;html=1;align=left;verticalAlign=middle;fontSize=11;"
+                vertex="1" parent="1">
+          <mxGeometry x="60" y="860" width="480" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="lg6"
+                value="정량 결과:  6 218 lines · 12 GB MLIR · 6 GB vmfb · 36.86 s compile · peak RAM 12.3 GB → budget 2 GB 위반 (Step 6 Q8_0 정당화)"
+                style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontStyle=2;fontColor=#5b21b6;"
+                vertex="1" parent="1">
+          <mxGeometry x="540" y="760" width="500" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="lg7"
+                value="가드레일 (사용자 메모리):&#xa; ① &quot;amd-shark 의 transformer 안 씀, export pipeline 만 활용&quot; ─ ✅ 준수&#xa; ② &quot;양자화는 MLIR lowering 후 마지막&quot; ─ ✅ Step 5 FP32 유지, Step 6 Q8_0 보류&#xa; ③ &quot;venv 항상&quot; ─ ✅ /home/bohyun/venv-shark/bin/python 절대경로&#xa; ④ Framework core invariant (Design D4) ─ ✅ src/npu_harness_framework/ diff 0"
+                style="text;html=1;align=left;verticalAlign=top;fontSize=10;fontColor=#16a34a;"
+                vertex="1" parent="1">
+          <mxGeometry x="540" y="805" width="500" height="100" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== Edges (data flow) ===== -->
+        <mxCell id="e1"
+                style="endArrow=classic;html=1;rounded=0;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;"
+                edge="1" source="n1" target="n3" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e2"
+                style="endArrow=classic;html=1;rounded=0;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.75;entryY=0;entryDx=0;entryDy=0;"
+                edge="1" source="n2" target="n3" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e3"
+                style="endArrow=classic;html=1;rounded=0;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;"
+                edge="1" source="n3" target="n4" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e4"
+                style="endArrow=classic;html=1;rounded=0;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;"
+                edge="1" source="n4" target="n5" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e5"
+                style="endArrow=classic;html=1;rounded=0;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;"
+                edge="1" source="n5" target="n6" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Dashed: vmfb -> IREE Runtime (다음 turn) -->
+        <mxCell id="e6"
+                value="다음 turn — 실행 검증"
+                style="endArrow=classic;html=1;rounded=0;strokeWidth=2;dashed=1;dashPattern=6 4;strokeColor=#94a3b8;fontSize=10;fontColor=#475569;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;"
+                edge="1" source="n6" target="s2" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- SSL stack vertical chain -->
+        <mxCell id="es1" style="endArrow=classic;html=1;strokeColor=#94a3b8;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="s1" target="s2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="es2" style="endArrow=classic;html=1;strokeColor=#94a3b8;exitX=0.3;exitY=1;entryX=0.5;entryY=0;" edge="1" source="s2" target="s3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="es3" style="endArrow=classic;html=1;strokeColor=#94a3b8;exitX=0.7;exitY=1;entryX=0.5;entryY=0;" edge="1" source="s2" target="s4" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="es4" style="endArrow=classic;html=1;strokeColor=#94a3b8;exitX=0.5;exitY=1;entryX=0.25;entryY=0;" edge="1" source="s3" target="s5" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="es5" style="endArrow=classic;html=1;strokeColor=#94a3b8;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="s5" target="s6" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="es6" style="endArrow=classic;html=1;strokeColor=#94a3b8;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="s6" target="s7" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="es7" style="endArrow=classic;html=1;strokeColor=#94a3b8;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="s7" target="s8" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="es8" style="endArrow=classic;html=1;strokeColor=#94a3b8;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="s8" target="s9" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
