@@ -1,0 +1,64 @@
+# ---- Secrets (must never be committed) ----
+Github-infomation.md
+.env
+.env.*
+*.pem
+*.key
+secrets/
+
+# ---- Internal-only (per no-push-sensitive rule, 2026-05-27) ----
+# 신규 파일만 ignore — 기존 tracked 는 그대로 (destructive 금지)
+REPORT-*.md
+agents/
+
+# ---- Local IDE / Claude cache ----
+.claude/
+.claude*/
+
+# ---- Codex CLI auth + cross-check verdicts ----
+.codex/
+.codex-reviews/
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+build/
+dist/
+
+# ---- Model + audio artifacts ----
+/models/
+/checkpoints/
+*.pt
+*.pth
+*.onnx
+*.bin
+*.safetensors
+recordings/
+*.wav
+!tests/fixtures/*.wav
+
+# ---- Logs / profiling ----
+logs/
+*.log
+profile_results/
+
+# ---- torch-mlir-zoo artifacts ----
+artifacts/
+/analysis/
+*.mlir
+# kernel microkernel templates are SOURCE (Jinja .mlir), not generated artifacts
+!src/torch_mlir_zoo/kernels/templates/*.mlir
+
+# ---- OS / editor ----
+.DS_Store
+.vscode/
+.idea/
+*.swp
+data/archive/

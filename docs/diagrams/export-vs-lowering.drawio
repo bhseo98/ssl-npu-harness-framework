@@ -1,0 +1,149 @@
+<mxfile host="app.diagrams.net" agent="easy-series" version="24.0.0">
+  <diagram id="page1" name="1·export-time vs lowering-time 클래스">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title1" value="Llama-3.2-1B-Instruct → amdsharktank export/lowering : 두 종류의 클래스" style="text;html=1;fontSize=18;fontStyle=1;align=center;" vertex="1" parent="1"><mxGeometry x="360" y="10" width="880" height="30" as="geometry" /></mxCell>
+        <mxCell id="sub1" value="좌: 그래프로 traced 되는 PyTorch nn.Module (= '무엇을 lowering 하나')   ·   우: trace 안 되고 손수 짠 MLIR 를 IR 에 삽입하는 kernel 클래스 (= '어떻게 lowering 되나')" style="text;html=1;fontSize=12;align=center;fontColor=#555555;" vertex="1" parent="1"><mxGeometry x="300" y="40" width="1000" height="20" as="geometry" /></mxCell>
+
+        <!-- LEFT swimlane: export-time -->
+        <mxCell id="L" value="EXPORT-TIME — traced nn.Module  (torch.export → torch dialect)" style="swimlane;startSize=30;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;verticalAlign=top;" vertex="1" parent="1"><mxGeometry x="40" y="80" width="760" height="880" as="geometry" /></mxCell>
+
+        <mxCell id="L_main" value="examples/export_paged_llm_v1.main()  — CLI 진입점" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="L"><mxGeometry x="20" y="40" width="720" height="34" as="geometry" /></mxCell>
+        <mxCell id="L_cfg" value="LlamaModelConfig.from_dataset() / LlamaHParams / ExportConfig / ParallelismConfig&#10;(IRPA properties + CLI flag → 타입화된 설정)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="L"><mxGeometry x="20" y="86" width="720" height="44" as="geometry" /></mxCell>
+
+        <mxCell id="L_model" value="PagedLlmModelV1(BaseCausalLMModel)   ← theta(...) 로 weight 주입,  prefill()/decode() 두 메서드" style="swimlane;startSize=28;html=1;fillColor=#eef5ff;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="L"><mxGeometry x="20" y="142" width="720" height="470" as="geometry" /></mxCell>
+        <mxCell id="L_tok" value="TokenEmbeddingLayer  →  ops.embedding_lookup" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="L_model"><mxGeometry x="16" y="38" width="688" height="30" as="geometry" /></mxCell>
+
+        <mxCell id="L_blk" value="PagedLlamaGQAttentionBlock × 16   (AttentionFFNBlock 로 래핑)" style="swimlane;startSize=26;html=1;fillColor=#f5faff;strokeColor=#6c8ebf;fontStyle=0;" vertex="1" parent="L_model"><mxGeometry x="16" y="78" width="688" height="300" as="geometry" /></mxCell>
+        <mxCell id="L_an" value="RMSNormLayer (attn_norm)  →  rms_norm: pow·mean·rsqrt·mul" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="L_blk"><mxGeometry x="14" y="34" width="660" height="28" as="geometry" /></mxCell>
+        <mxCell id="L_qkv" value="LinearLayer × 3  (attn_q / attn_k / attn_v)  →  ops.linear: mm" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="L_blk"><mxGeometry x="14" y="68" width="660" height="28" as="geometry" /></mxCell>
+        <mxCell id="L_rope" value="CachedRotaryLayer → RotaryEmbeddingLayer.forward&#10;cos/sin·mul·sub·add (표준 aten) + select_concat(➜우측 커널)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="L_blk"><mxGeometry x="14" y="102" width="660" height="40" as="geometry" /></mxCell>
+        <mxCell id="L_attn" value="PagedGQAttention (PagedMHAttention)&#10;write(K,V)→cache · read(➜우측 gather, decode만) · attention=SDPA" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="L_blk"><mxGeometry x="14" y="148" width="660" height="44" as="geometry" /></mxCell>
+        <mxCell id="L_o" value="LinearLayer (attn_output)  →  mm   +   residual add" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="L_blk"><mxGeometry x="14" y="198" width="660" height="28" as="geometry" /></mxCell>
+        <mxCell id="L_fn" value="RMSNormLayer (ffn_norm)  +  FFN (SwiGLU: gate·up·down LinearLayer, silu)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="L_blk"><mxGeometry x="14" y="232" width="660" height="40" as="geometry" /></mxCell>
+
+        <mxCell id="L_on" value="RMSNormLayer (output_norm)  +  LinearLayer (output = lm_head)  →  mm" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="L_model"><mxGeometry x="16" y="390" width="688" height="40" as="geometry" /></mxCell>
+        <mxCell id="L_kv" value="DefaultPagedKVCache (PagedKVCache)  — slab[?,524288],  read()/write()/write_timestep()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="L_model"><mxGeometry x="16" y="432" width="688" height="30" as="geometry" /></mxCell>
+
+        <mxCell id="L_svc" value="ServicePagedLlmModelV1(torch.nn.Module)  — prefill/decode 래핑 + logits_norm + top_k + setup_cache/setup_arg_devices" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="L"><mxGeometry x="20" y="624" width="720" height="44" as="geometry" /></mxCell>
+        <mxCell id="L_fx" value="iree.turbine.aot :  FxProgramsBuilder + @fxb.export_program(torch.export.Dim) + export()&#10;→ ExportOutput.save_mlir()  →  llama-3.2-1b.mlir (27,269 lines, entry: prefill_bs1 / decode_bs1)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="L"><mxGeometry x="20" y="684" width="720" height="50" as="geometry" /></mxCell>
+
+        <!-- RIGHT swimlane: lowering-time -->
+        <mxCell id="R" value="LOWERING-TIME — @mlir_kernel / CustomOp 가 손수 짠 MLIR 를 IR 에 삽입 (trace 안 함)" style="swimlane;startSize=30;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;verticalAlign=top;" vertex="1" parent="1"><mxGeometry x="840" y="80" width="720" height="880" as="geometry" /></mxCell>
+
+        <mxCell id="R_infra" value="kernels/mlir_kernel.py 인프라&#10;@mlir_kernel · MLIRSpec · KernelBuilder · inline_template_function · CustomOp&#10;(FX 노드가 이 커널을 호출하면 → 템플릿 MLIR util.func 를 그대로 출력 IR 에 splice)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="R"><mxGeometry x="20" y="44" width="680" height="64" as="geometry" /></mxCell>
+
+        <mxCell id="R_rope" value="RoPEKernels.rope_select_concat   (@mlir_kernel)&#10;layers/rotary_embedding_hf.py:36&#10;→ util.func @rope_select_concat (linalg.generic + arith.select)&#10;호출: prefill 32 + decode 32 = 64" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="R"><mxGeometry x="20" y="140" width="680" height="84" as="geometry" /></mxCell>
+
+        <mxCell id="R_gather" value="KVCacheGatherKernel   (@mlir_kernel)&#10;layers/paged_attention.py:68&#10;→ util.func @paged_attention_kv_cache_gather (tensor.extract_slice + iree_linalg_ext.gather)&#10;호출: prefill 0 + decode 32 = 32   ← decode 전용!" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="R"><mxGeometry x="20" y="248" width="680" height="84" as="geometry" /></mxCell>
+
+        <mxCell id="R_aff" value="DeviceAffinity (iree.turbine.aot)&#10;→ 모든 arg/result 에 iree.abi.affinity=#hal.device.promise&lt;@__device_0&gt; attribute" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="R"><mxGeometry x="20" y="356" width="680" height="50" as="geometry" /></mxCell>
+
+        <mxCell id="R_sdpa" value="SDPA 는 커스텀 아님 — torch.operator&#10;'torch.aten._scaled_dot_product_flash_attention_for_cpu'&#10;단일 불투명 op 로 유지 (bmm/softmax 로 분해 안 됨, _softmax 0개). 32회(prefill16+decode16)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="R"><mxGeometry x="20" y="430" width="680" height="70" as="geometry" /></mxCell>
+
+        <mxCell id="R_note" value="요점:&#10;• 좌측 nn.Module = torch.export 가 FX 그래프로 추적 → torch.aten.* 로 lowering&#10;• 우측 @mlir_kernel = 추적되지 않고, 호출 지점에 손수 짠 util.func 를 직접 emit&#10;• 그래서 IR 에는 'torch.aten.* (좌)' + 'iree_linalg_ext / linalg.generic 커스텀 util.func (우)' 가 섞임&#10;• NPU 컴파일러가 막히는 건 거의 우측 2개(gather, select_concat) + SDPA 불투명 op + affinity" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;align=left;spacingLeft=8;" vertex="1" parent="R"><mxGeometry x="20" y="524" width="680" height="120" as="geometry" /></mxCell>
+
+        <!-- cross edges -->
+        <mxCell id="e_rope" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#d6b656;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="L_rope" target="R_rope"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_gather" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#b85450;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="L_attn" target="R_gather"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_aff" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#d6b656;strokeWidth=2;endArrow=block;dashed=1;" edge="1" parent="1" source="L_svc" target="R_aff"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e_sdpa" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#9673a6;strokeWidth=2;endArrow=block;dashed=1;" edge="1" parent="1" source="L_attn" target="R_sdpa"><mxGeometry relative="1" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram id="page2" name="2·prefill_bs1 클래스↔IR 1:1 매핑">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="t2" value="prefill_bs1  실측 그래프 (llama-3.2-1b.mlir, line@) ↔ 클래스 1:1 매핑" style="text;html=1;fontSize=18;fontStyle=1;align=center;" vertex="1" parent="1"><mxGeometry x="380" y="10" width="840" height="30" as="geometry" /></mxCell>
+        <mxCell id="t2b" value="입력 args: tokens[1,?] · seq_lens[1] · seq_block_ids[1,?] · cache[?,524288]f16   →   출력: logits[1,?,128256]f16   (entry @prefill_bs1, line 151)" style="text;html=1;fontSize=12;align=center;fontColor=#555;" vertex="1" parent="1"><mxGeometry x="320" y="40" width="960" height="20" as="geometry" /></mxCell>
+
+        <!-- column headers -->
+        <mxCell id="h_cls" value="클래스 / 메서드 (export-time)" style="rounded=0;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="60" y="70" width="380" height="30" as="geometry" /></mxCell>
+        <mxCell id="h_ir" value="IR 에 떨어지는 op (line@, prefill count)" style="rounded=0;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="520" y="70" width="520" height="30" as="geometry" /></mxCell>
+        <mxCell id="h_tot" value="전체(p+d)" style="rounded=0;html=1;fillColor=#f5f5f5;strokeColor=#999;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1080" y="70" width="120" height="30" as="geometry" /></mxCell>
+
+        <!-- rows -->
+        <mxCell id="c1" value="TokenEmbeddingLayer.forward" style="rounded=1;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="60" y="115" width="380" height="40" as="geometry" /></mxCell>
+        <mxCell id="i1" value="torch.aten.embedding   (line 510)" style="rounded=1;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="520" y="115" width="520" height="40" as="geometry" /></mxCell>
+        <mxCell id="o1" value="2" style="rounded=1;html=1;fillColor=#f5f5f5;strokeColor=#999;" vertex="1" parent="1"><mxGeometry x="1080" y="115" width="120" height="40" as="geometry" /></mxCell>
+        <mxCell id="r1" style="edgeStyle=none;html=1;endArrow=block;strokeColor=#888;" edge="1" parent="1" source="c1" target="i1"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="c2" value="RMSNormLayer.forward  (attn_norm)" style="rounded=1;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="60" y="165" width="380" height="40" as="geometry" /></mxCell>
+        <mxCell id="i2" value="pow(518)·mean(524)·add·rsqrt(530)·mul" style="rounded=1;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="520" y="165" width="520" height="40" as="geometry" /></mxCell>
+        <mxCell id="o2" value="66 = (16·2+1)·2" style="rounded=1;html=1;fillColor=#f5f5f5;strokeColor=#999;" vertex="1" parent="1"><mxGeometry x="1080" y="165" width="120" height="40" as="geometry" /></mxCell>
+        <mxCell id="r2" style="edgeStyle=none;html=1;endArrow=block;strokeColor=#888;" edge="1" parent="1" source="c2" target="i2"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="c3" value="LinearLayer ×3 (attn_q/k/v) + _project_qkv" style="rounded=1;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="60" y="215" width="380" height="40" as="geometry" /></mxCell>
+        <mxCell id="i3" value="torch.aten.mm (553)  + view" style="rounded=1;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="520" y="215" width="520" height="40" as="geometry" /></mxCell>
+        <mxCell id="o3" value="mm 226 = (16·7+1)·2" style="rounded=1;html=1;fillColor=#f5f5f5;strokeColor=#999;" vertex="1" parent="1"><mxGeometry x="1080" y="215" width="120" height="40" as="geometry" /></mxCell>
+        <mxCell id="r3" style="edgeStyle=none;html=1;endArrow=block;strokeColor=#888;" edge="1" parent="1" source="c3" target="i3"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="c4" value="RotaryEmbeddingLayer.compute_sincos_cache" style="rounded=1;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="60" y="265" width="380" height="40" as="geometry" /></mxCell>
+        <mxCell id="i4" value="bmm(pos×freq,703)·cos(714)·sin(721)·sub" style="rounded=1;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="520" y="265" width="520" height="40" as="geometry" /></mxCell>
+        <mxCell id="o4" value="bmm 64·cos 64·sin 64" style="rounded=1;html=1;fillColor=#f5f5f5;strokeColor=#999;" vertex="1" parent="1"><mxGeometry x="1080" y="265" width="120" height="40" as="geometry" /></mxCell>
+        <mxCell id="r4" style="edgeStyle=none;html=1;endArrow=block;strokeColor=#888;" edge="1" parent="1" source="c4" target="i4"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="c5" value="RoPEKernels.rope_select_concat  (@mlir_kernel)" style="rounded=1;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1"><mxGeometry x="60" y="315" width="380" height="40" as="geometry" /></mxCell>
+        <mxCell id="i5" value="util.call @rope_select_concat (773) → linalg.generic" style="rounded=1;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1"><mxGeometry x="520" y="315" width="520" height="40" as="geometry" /></mxCell>
+        <mxCell id="o5" value="64 = 32+32" style="rounded=1;html=1;fillColor=#f5f5f5;strokeColor=#999;" vertex="1" parent="1"><mxGeometry x="1080" y="315" width="120" height="40" as="geometry" /></mxCell>
+        <mxCell id="r5" style="edgeStyle=none;html=1;endArrow=block;strokeColor=#d6b656;strokeWidth=2;" edge="1" parent="1" source="c5" target="i5"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="c6" value="PagedKVCache.write → ops.index_copy_" style="rounded=1;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1"><mxGeometry x="60" y="365" width="380" height="40" as="geometry" /></mxCell>
+        <mxCell id="i6" value="torch.aten.index_put (1015)  — KV write" style="rounded=1;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1"><mxGeometry x="520" y="365" width="520" height="40" as="geometry" /></mxCell>
+        <mxCell id="o6" value="64 = 32+32" style="rounded=1;html=1;fillColor=#f5f5f5;strokeColor=#999;" vertex="1" parent="1"><mxGeometry x="1080" y="365" width="120" height="40" as="geometry" /></mxCell>
+        <mxCell id="r6" style="edgeStyle=none;html=1;endArrow=block;strokeColor=#d6b656;strokeWidth=2;" edge="1" parent="1" source="c6" target="i6"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="c7" value="PagedGQAttention.attention (GQA expand + SDPA)" style="rounded=1;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="60" y="415" width="380" height="40" as="geometry" /></mxCell>
+        <mxCell id="i7" value="expand + torch.operator _sdpa_flash_attention_for_cpu (1243)" style="rounded=1;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="520" y="415" width="520" height="40" as="geometry" /></mxCell>
+        <mxCell id="o7" value="SDPA 32 (p16+d16)" style="rounded=1;html=1;fillColor=#f5f5f5;strokeColor=#999;" vertex="1" parent="1"><mxGeometry x="1080" y="415" width="120" height="40" as="geometry" /></mxCell>
+        <mxCell id="r7" style="edgeStyle=none;html=1;endArrow=block;strokeColor=#9673a6;strokeWidth=2;" edge="1" parent="1" source="c7" target="i7"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="c8" value="LinearLayer(attn_output)+residual / FFN(SwiGLU)" style="rounded=1;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="60" y="465" width="380" height="40" as="geometry" /></mxCell>
+        <mxCell id="i8" value="mm + add.Tensor + silu (1324) + mul" style="rounded=1;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="520" y="465" width="520" height="40" as="geometry" /></mxCell>
+        <mxCell id="o8" value="silu 32 = 16·2" style="rounded=1;html=1;fillColor=#f5f5f5;strokeColor=#999;" vertex="1" parent="1"><mxGeometry x="1080" y="465" width="120" height="40" as="geometry" /></mxCell>
+        <mxCell id="r8" style="edgeStyle=none;html=1;endArrow=block;strokeColor=#888;" edge="1" parent="1" source="c8" target="i8"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="c9" value="×16 blocks  (위 c2~c8 반복)" style="rounded=1;html=1;fillColor=#f5f5f5;strokeColor=#999;dashed=1;fontStyle=2;" vertex="1" parent="1"><mxGeometry x="60" y="515" width="380" height="30" as="geometry" /></mxCell>
+        <mxCell id="i9" value="(블록마다 동일 패턴, line 510~13900 반복)" style="rounded=1;html=1;fillColor=#f5f5f5;strokeColor=#999;dashed=1;fontStyle=2;" vertex="1" parent="1"><mxGeometry x="520" y="515" width="520" height="30" as="geometry" /></mxCell>
+
+        <mxCell id="c10" value="output_norm RMSNormLayer + LinearLayer(lm_head)" style="rounded=1;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="60" y="555" width="380" height="40" as="geometry" /></mxCell>
+        <mxCell id="i10" value="rms_norm + torch.aten.mm (14145) → logits[?,128256]" style="rounded=1;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="520" y="555" width="520" height="40" as="geometry" /></mxCell>
+        <mxCell id="o10" value="return @14152" style="rounded=1;html=1;fillColor=#f5f5f5;strokeColor=#999;" vertex="1" parent="1"><mxGeometry x="1080" y="555" width="120" height="40" as="geometry" /></mxCell>
+        <mxCell id="r10" style="edgeStyle=none;html=1;endArrow=block;strokeColor=#888;" edge="1" parent="1" source="c10" target="i10"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="leg" value="범례 — 파랑/초록: 표준 torch.aten (NPU 친화)   |   노랑: @mlir_kernel 커스텀(select_concat/index_put)   |   빨강계열: decode 전용 gather   |   보라: SDPA 불투명 op&#10;decode_bs1(line 14154~)도 동일 매핑 + read()→@paged_attention_kv_cache_gather 32회(iree_linalg_ext.gather)가 추가됨" style="rounded=1;html=1;fillColor=#ffffff;strokeColor=#999;align=left;spacingLeft=8;" vertex="1" parent="1"><mxGeometry x="60" y="615" width="1140" height="60" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram id="page3" name="3·커스터마이징 포인트">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="t3" value="amdsharktank export 커스터마이징 — 어디를 잡고 흔들 수 있나" style="text;html=1;fontSize=18;fontStyle=1;align=center;" vertex="1" parent="1"><mxGeometry x="420" y="10" width="760" height="30" as="geometry" /></mxCell>
+
+        <mxCell id="seam" value="export_llm_v1(modelClass = PagedLlmModelV1)   ← 가장 큰 seam: modelClass 만 갈아끼우면 그래프 전체 교체" style="rounded=1;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="120" y="60" width="1360" height="40" as="geometry" /></mxCell>
+
+        <mxCell id="k1" value="① ExportConfig 플래그 (config.py)&#10;bs_prefill/bs_decode · top_k · logits_normalization · skip_prefill/skip_decode · use_extend_attention&#10;난이도: 낮음 (CLI flag).  효과: entry 개수/sampling 제어. NPU 제약 대부분 해소 못함." style="rounded=1;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=8;" vertex="1" parent="1"><mxGeometry x="120" y="130" width="660" height="100" as="geometry" /></mxCell>
+
+        <mxCell id="k2" value="② LlamaModelConfig (llm_configs.py)&#10;kv_cache_type · block_seq_stride · activation/attention_dtype · attention_kernel · matmul_kernel · tensor/pipeline_parallelism&#10;난이도: 낮음.  효과: dtype 통일(#6), slab 모양, single-device(#5)." style="rounded=1;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=8;" vertex="1" parent="1"><mxGeometry x="820" y="130" width="660" height="100" as="geometry" /></mxCell>
+
+        <mxCell id="k3" value="③ @mlir_kernel 템플릿 교체 (rotary_embedding_hf.py / paged_attention.py)&#10;rope_select_concat → tensor.concat 등 표준 op,  kv_cache_gather → 표준 slice/gather&#10;난이도: 중.  효과: NPU 가 모르는 iree_linalg_ext / linalg.generic 커스텀 util.func 제거(#3,#4)." style="rounded=1;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=8;" vertex="1" parent="1"><mxGeometry x="120" y="250" width="660" height="100" as="geometry" /></mxCell>
+
+        <mxCell id="k4" value="④ attention_kernel 선택 (ops.scaled_dot_product_attention impl=)&#10;'torch' / 'decomposed' / 'flash' …  → SDPA 불투명 op 를 분해 또는 다른 커널로&#10;난이도: 중.  효과: _sdpa_flash_attention_for_cpu(보라) 를 aten matmul+softmax 로 풀어 NPU 가 일반 op 로 받음." style="rounded=1;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;spacingLeft=8;" vertex="1" parent="1"><mxGeometry x="820" y="250" width="660" height="100" as="geometry" /></mxCell>
+
+        <mxCell id="k5" value="⑤ modelClass 교체 = 우리 LlamaOnDevice 패턴 (가장 근본적)&#10;forward(input_ids)→logits 단일 entry · KV cache 제거(stateless) · prefill/decode 통합 · 표준 aten 만 · fixed shape&#10;난이도: 높음(forward 재작성 ~170 LoC).  효과: easy3 의 9개 제약 중 8개 한 번에 추방. IRPA(#9)는 그대로 재사용." style="rounded=1;html=1;fillColor=#f8cecc;strokeColor=#b85450;align=left;spacingLeft=8;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="120" y="370" width="1360" height="100" as="geometry" /></mxCell>
+
+        <mxCell id="map" value="제약(easy3) ↔ 레버 매핑 :&#10;#1 KV state arg → ⑤   ·   #2 prefill/decode split → ①(skip)/⑤   ·   #3 paged gather → ③/⑤   ·   #4 RoPE concat → ③/⑤&#10;#5 device affinity → ②(tp=pp=1)   ·   #6 fp16 mixed → ②   ·   #7 dynamic dim → ⑤(fixed shape)+aot   ·   #8 multi-args → ⑤   ·   #9 weight → IRPA 그대로(✓)" style="rounded=1;html=1;fillColor=#ffffff;strokeColor=#999;align=left;spacingLeft=8;" vertex="1" parent="1"><mxGeometry x="120" y="500" width="1360" height="90" as="geometry" /></mxCell>
+
+        <mxCell id="concl" value="결론: ①②④ 는 export/lowering 옵션 튜닝(빠름)이고 NPU 적합도를 부분만 올린다. ③ 은 커널 단위 수술. ⑤ (modelClass 재작성)이 9개 제약을 근본 해소 — 그게 LlamaOnDevice 가 PagedLlmModelV1 의 재구현인 이유." style="rounded=1;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;spacingLeft=8;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="120" y="610" width="1360" height="60" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

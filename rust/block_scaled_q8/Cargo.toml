@@ -1,0 +1,20 @@
+[package]
+name = "block_scaled_q8"
+version = "0.1.0"
+edition = "2021"
+description = "SSLNPU INT8 block-scaled matmul — Rust-native kernel (footprint benchmark twin of the IREE-turbine CustomOp)"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "bench"
+path = "src/main.rs"
+
+# Footprint-minimal release profile (on-device/embedded target).
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

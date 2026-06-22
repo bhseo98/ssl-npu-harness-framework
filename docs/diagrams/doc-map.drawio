@@ -1,0 +1,32 @@
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="doc-map" name="Doc Map">
+    <mxGraphModel dx="1000" dy="700" grid="1" gridSize="10" guides="1" page="1" pageWidth="900" pageHeight="600" math="0" shadow="0">
+      <root>
+        <mxCell id="0" /><mxCell id="1" parent="0" />
+        <mxCell id="t" value="docs/ 문서 지도 — 시기/성격별 분리" style="text;html=1;align=center;fontSize=14;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="40" y="16" width="820" height="30" as="geometry"/></mxCell>
+
+        <mxCell id="g1" value="🟢 활성 (recent, 2026-06)" style="rounded=1;html=1;fillColor=#d5e8d4;strokeColor=#82b366;verticalAlign=top;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="40" y="60" width="500" height="380" as="geometry"/></mxCell>
+        <mxCell id="s1" value="status.md — 현황 단일 소스" style="rounded=1;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1"><mxGeometry x="60" y="92" width="220" height="34" as="geometry"/></mxCell>
+        <mxCell id="s2" value="guidelines.md" style="rounded=1;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="300" y="92" width="220" height="34" as="geometry"/></mxCell>
+        <mxCell id="s3" value="decisions-qa.md (질문→결정 인덱스)" style="rounded=1;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="60" y="136" width="460" height="34" as="geometry"/></mxCell>
+        <mxCell id="r0" value="recipes/   (재현 절차)" style="rounded=1;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;verticalAlign=top;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="60" y="182" width="460" height="110" as="geometry"/></mxCell>
+        <mxCell id="r1" value="kernels.md" style="rounded=1;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="74" y="212" width="100" height="30" as="geometry"/></mxCell>
+        <mxCell id="r2" value="vp.md" style="rounded=1;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="184" y="212" width="100" height="30" as="geometry"/></mxCell>
+        <mxCell id="r3" value="webui-mic.md" style="rounded=1;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="294" y="212" width="110" height="30" as="geometry"/></mxCell>
+        <mxCell id="r4" value="zoo.md" style="rounded=1;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="414" y="212" width="90" height="30" as="geometry"/></mxCell>
+        <mxCell id="r5" value="↳ 각 recipe엔 diagrams/ 그림 링크" style="text;html=1;align=left;fontSize=10;fontStyle=2;" vertex="1" parent="1"><mxGeometry x="74" y="252" width="430" height="24" as="geometry"/></mxCell>
+        <mxCell id="kd" value="kernel-design/ 01~04 — SSLNPU 커널 설계 + INT8 footprint" style="rounded=1;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="60" y="302" width="460" height="34" as="geometry"/></mxCell>
+        <mxCell id="dg" value="diagrams/ — 시각화 drawio (doc-map·deliverables-status·vp-runtime·vp-boot-chain·lowering-pipeline·kernel-anatomy …)" style="rounded=1;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;fontSize=10;" vertex="1" parent="1"><mxGeometry x="60" y="346" width="460" height="80" as="geometry"/></mxCell>
+
+        <mxCell id="g2" value="🧊 archive/ (구버전 ~2026-05, superseded)" style="rounded=1;html=1;fillColor=#f5f5f5;strokeColor=#999999;verticalAlign=top;fontStyle=1;fontColor=#666666;" vertex="1" parent="1"><mxGeometry x="560" y="60" width="300" height="180" as="geometry"/></mxCell>
+        <mxCell id="a1" value="architecture.md · shark-ai-analysis.md&#10;development.md · 2026-05-27 audit/verification&#10;2026-05-28 status · llama-step5" style="rounded=1;html=1;fillColor=#ffffff;strokeColor=#999999;fontColor=#666666;align=left;fontSize=11;" vertex="1" parent="1"><mxGeometry x="580" y="96" width="260" height="120" as="geometry"/></mxCell>
+
+        <mxCell id="g3" value="📓 easy-series/ (개인 학습, 별도 트랙)" style="rounded=1;html=1;fillColor=#fff2cc;strokeColor=#d6b656;verticalAlign=top;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="560" y="260" width="300" height="90" as="geometry"/></mxCell>
+        <mxCell id="e1" value="easy1~9 — Torch-MLIR lowering 학습 노트&#10;(포멀 문서와 분리 유지)" style="text;html=1;align=left;fontSize=11;" vertex="1" parent="1"><mxGeometry x="580" y="292" width="260" height="44" as="geometry"/></mxCell>
+
+        <mxCell id="g4" value="📁 reports/ (로컬 전용 — git 제외)" style="rounded=1;html=1;fillColor=#f8cecc;strokeColor=#b85450;verticalAlign=top;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="560" y="370" width="300" height="70" as="geometry"/></mxCell>
+        <mxCell id="rp" value="weekly / research-note — push 금지" style="text;html=1;align=left;fontSize=11;" vertex="1" parent="1"><mxGeometry x="580" y="400" width="260" height="30" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

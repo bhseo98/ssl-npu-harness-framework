@@ -1,0 +1,24 @@
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="deliv-status" name="Deliverables Status">
+    <mxGraphModel dx="1000" dy="700" grid="1" gridSize="10" guides="1" page="1" pageWidth="900" pageHeight="560" math="0" shadow="0">
+      <root>
+        <mxCell id="0" /><mxCell id="1" parent="0" />
+        <mxCell id="t" value="3 Deliverable 상태 (현황 단일 소스: status.md) — 비전: 지능 가진 작은 엣지 임베디드 시스템" style="text;html=1;align=center;fontSize=13;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="30" y="14" width="840" height="30" as="geometry"/></mxCell>
+
+        <mxCell id="d1" value="① 음성 앱 (speech)&#10;STT→LLM→TTS · Python+PyTorch · GPU&#10;&#10;✅ 달성&#10;28/28 테스트 · 2GB profiler 실측&#10;swap=@register+YAML&#10;⚠ TTS 음질 교체 PENDING" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;fontSize=11;" vertex="1" parent="1"><mxGeometry x="40" y="64" width="250" height="170" as="geometry"/></mxCell>
+        <mxCell id="d2" value="② lowering (feature/sslnpu-kernels)&#10;PyTorch→MLIR for target app&#10;&#10;⚠ 부분달성&#10;block_scaled_q8 swap seam · WM3(rel 0.8%)&#10;RK1/RK2(RSS 3–4.6×↓) · VP0 riscv64&#10;✅ target 정렬(Llama 통일)&#10;⚠ TTS lowering 미진" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;fontSize=11;" vertex="1" parent="1"><mxGeometry x="325" y="64" width="250" height="170" as="geometry"/></mxCell>
+        <mxCell id="d3" value="③ VP 배포 (feature/vp-deployment)&#10;CPU-only SoC VP · RISC-V64 포팅&#10;&#10;⚠ 부분 (부팅~엔진 복구)&#10;ssl-soc-gen2 2GB 부팅 ✅&#10;static llama-cli 재빌드 ✅(ABI 버그 수정)&#10;❌ 실제 토큰 생성 · STT/TTS · 오케스트레이션" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;verticalAlign=top;fontSize=11;" vertex="1" parent="1"><mxGeometry x="610" y="64" width="250" height="170" as="geometry"/></mxCell>
+        <mxCell id="e12" value="순방향 의존 ①→②→③" style="endArrow=classic;html=1;strokeColor=#333;fontSize=10;" edge="1" parent="1" source="d1" target="d2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e23" value="" style="endArrow=classic;html=1;strokeColor=#333;" edge="1" parent="1" source="d2" target="d3"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <mxCell id="tp" value="확정 target 파이프라인 (2026-06-11): WebUI push-to-talk → whisper-tiny INT8 → Llama-3.2-1B → TTS(KO, 선정 PENDING)" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=12;" vertex="1" parent="1"><mxGeometry x="40" y="262" width="820" height="44" as="geometry"/></mxCell>
+
+        <mxCell id="cn" value="불변 제약: 합 ≤2GB DRAM · CPU-only(NPU 나중) · 한국어 · 모델 swap · advanced 자제(INT8 예외)" style="text;html=1;align=center;fontSize=11;fontStyle=2;" vertex="1" parent="1"><mxGeometry x="40" y="316" width="820" height="24" as="geometry"/></mxCell>
+
+        <mxCell id="ob" value="미해결 결정 (사용자 몫): ① TTS 모델 선정 · ② 2GB 배포 RSS 분리 측정 · ③ VP 네이티브 포팅(엔진+오케스트레이션) · 실제 토큰 생성" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#f8cecc;strokeColor=#b85450;align=left;fontSize=11;" vertex="1" parent="1"><mxGeometry x="40" y="352" width="820" height="56" as="geometry"/></mxCell>
+
+        <mxCell id="dr" value="③ 방향(요구사항 §4): &quot;RISC-V 기반 NPU Harness Framework Porting&quot; — Python harness는 VP 불가 → 네이티브(llama.cpp/whisper.cpp + 네이티브 오케스트레이션) 포팅" style="text;html=1;align=left;fontSize=10;fontStyle=2;fontColor=#b85450;" vertex="1" parent="1"><mxGeometry x="40" y="416" width="820" height="40" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
